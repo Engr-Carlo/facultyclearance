@@ -124,7 +124,7 @@ export async function getProfessorFolderId(
  */
 export async function getDrivePickerToken(userId: string): Promise<string> {
   const account = await db
-    .select({ accessToken: accounts.accessToken })
+    .select({ accessToken: accounts.access_token })
     .from(accounts)
     .where(and(eq(accounts.userId, userId), eq(accounts.provider, "google")))
     .then((r) => r[0]);
