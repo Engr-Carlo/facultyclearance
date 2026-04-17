@@ -39,7 +39,7 @@ type Requirement = {
 
 type AuditLog = {
   id: string;
-  actorId: string;
+  actorId: string | null;
   action: string;
   targetTable: string | null;
   targetId: string | null;
