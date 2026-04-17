@@ -14,17 +14,16 @@ type User = {
 type Department = {
   id: string;
   name: string;
-  code: string;
+  college: string;
   createdAt: Date;
 };
 
 type Semester = {
   id: string;
-  name: string;
-  term: string;
-  schoolYear: string;
+  label: string;
   isActive: boolean;
   deadline: Date | null;
+  driveFolderId: string | null;
   createdAt: Date;
 };
 
@@ -69,7 +68,7 @@ export default function AdminPanel({
 
   // Dept form
   const [deptName, setDeptName] = useState("");
-  const [deptCode, setDeptCode] = useState("");
+  const [deptCollege, setDeptCollege] = useState("University of Cabuyao");
 
   // Semester form
   const [semName, setSemName] = useState("");
@@ -143,9 +142,9 @@ export default function AdminPanel({
   async function createDept(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await post("department", { name: deptName, code: deptCode });
+      await post("department", { name: deptName, college: deptCollege });
       setDeptName("");
-      setDeptCode("");
+      setDeptCollege("University of Cabuyao");
       window.location.reload();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error");
@@ -156,9 +155,7 @@ export default function AdminPanel({
     e.preventDefault();
     try {
       await post("semester", {
-        name: semName,
-        term: semTerm,
-        schoolYear: semYear,
+        label: semName,
         deadline: semDeadline || null,
       });
       setSemName("");
@@ -365,13 +362,12 @@ export default function AdminPanel({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500">Code</label>
+              <label className="text-xs text-gray-500">College</label>
               <input
-                value={deptCode}
-                onChange={(e) => setDeptCode(e.target.value)}
-                required
+                value={deptCollege}
+                onChange={(e) => setDeptCollege(e.target.value)}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-teal-400"
-                placeholder="e.g. CS"
+                placeholder="e.g. University of Cabuyao"
               />
             </div>
             <button
@@ -388,7 +384,7 @@ export default function AdminPanel({
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase">
                   <th className="text-left px-4 py-3 font-medium">Department</th>
-                  <th className="text-left px-4 py-3 font-medium">Code</th>
+                  <th className="text-left px-4 py-3 font-medium">College</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -396,7 +392,7 @@ export default function AdminPanel({
                 {departments.map((d) => (
                   <tr key={d.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{d.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{d.code}</td>
+                    <td className="px-4 py-3 text-gray-500">{d.college}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => del("department", d.id)}
@@ -481,7 +477,7 @@ export default function AdminPanel({
               >
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 flex items-center gap-2">
-                    {s.name}
+                    {s.label}
                     {s.isActive && (
                       <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
                         Active
@@ -489,7 +485,6 @@ export default function AdminPanel({
                     )}
                   </div>
                   <div className="text-xs text-gray-400">
-                    {s.schoolYear} ·{" "}
                     {s.deadline
                       ? `Deadline: ${new Date(s.deadline).toLocaleString()}`
                       : "No deadline set"}
@@ -605,7 +600,7 @@ export default function AdminPanel({
                 <option value="">Select semester...</option>
                 {semesters.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    {s.label}
                   </option>
                 ))}
               </select>

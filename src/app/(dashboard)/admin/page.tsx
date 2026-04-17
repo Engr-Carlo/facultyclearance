@@ -32,6 +32,7 @@ export default async function AdminDashboard() {
         actorId: auditLogs.actorId,
         action: auditLogs.action,
         targetTable: auditLogs.targetTable,
+        targetId: auditLogs.targetId,
         metadata: auditLogs.metadata,
         createdAt: auditLogs.createdAt,
       })
