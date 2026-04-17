@@ -16,28 +16,29 @@ type ProfessorItem = {
 
 type ProfessorRow = {
   id: string;
-  name: string;
+  name: string | null;
   email: string;
   allChairApproved: boolean;
   allCleared: boolean;
   total: number;
   cleared: number;
   items: ProfessorItem[];
+  [key: string]: unknown;
 };
 
 type DeptSummary = {
   id: string;
   name: string;
   professors: ProfessorRow[];
-  pct: number;
+  completionPct: number;
+  [key: string]: unknown;
 };
 
 type Semester = {
   id: string;
-  name: string;
-  term: string;
-  schoolYear: string;
+  label: string;
   deadline: Date | null;
+  [key: string]: unknown;
 };
 
 export default function DeanDashboardPanel({
@@ -134,7 +135,7 @@ export default function DeanDashboardPanel({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `clearance_${activeSemester?.name ?? "export"}.csv`;
+    a.download = `clearance_${activeSemester?.label ?? "export"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -180,10 +181,10 @@ export default function DeanDashboardPanel({
               <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-teal-500 rounded-full transition-all"
-                  style={{ width: `${d.pct}%` }}
+                  style={{ width: `${d.completionPct}%` }}
                 />
               </div>
-              <div className="text-xs text-gray-500 mt-1">{d.pct}% cleared</div>
+              <div className="text-xs text-gray-500 mt-1">{d.completionPct}% cleared</div>
             </button>
           ))}
         </div>
