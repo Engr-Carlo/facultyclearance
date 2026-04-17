@@ -8,7 +8,7 @@ import {
   semesters,
   requirements,
 } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import DeanDashboardPanel from "@/components/review/DeanDashboardPanel";
 import DeadlineBanner from "@/components/ui/DeadlineBanner";
 

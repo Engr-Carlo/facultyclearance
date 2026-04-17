@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, departments, semesters, requirements, auditLogs } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, departments, semesters, auditLogs } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
 import AdminPanel from "@/components/admin/AdminPanel";
 
 export default async function AdminDashboard() {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getDrivePickerToken } from "@/lib/drive/client";
@@ -8,7 +8,7 @@ import { getDrivePickerToken } from "@/lib/drive/client";
  * Returns a short-lived OAuth access token scoped to Drive for the Picker API.
  * The token is derived from the session's stored account access token.
  */
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "professor") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

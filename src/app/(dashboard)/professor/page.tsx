@@ -5,7 +5,6 @@ import {
   clearanceItems,
   requirements,
   semesters,
-  users,
   reviews,
   notifications,
 } from "@/lib/db/schema";
@@ -67,7 +66,7 @@ export default async function ProfessorDashboard() {
           .from(reviews)
           .where(
             itemIds.reduce(
-              (acc, id) => acc,
+              (acc, _id) => acc,
               eq(reviews.clearanceItemId, itemIds[0])
             )
           )

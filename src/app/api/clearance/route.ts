@@ -6,12 +6,9 @@ import {
   clearanceItems,
   notifications,
   professorRequirements,
-  requirements,
-  semesters,
   users,
 } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
-import { writeAuditLog } from "@/lib/audit";
 
 /**
  * POST /api/clearance

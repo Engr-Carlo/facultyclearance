@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import type { } from "next-auth";
 import { Role } from "@/lib/db/schema";
 
 declare module "next-auth" {

@@ -8,7 +8,7 @@ import {
   notifications,
   users,
 } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { writeAuditLog } from "@/lib/audit";
 
 /**
@@ -87,12 +87,6 @@ export async function POST(req: NextRequest) {
         : decision === "returned"
         ? "returned"
         : "rejected";
-
-    const professorName = await db
-      .select({ name: users.name })
-      .from(users)
-      .where(eq(users.id, item.professorId))
-      .then((r) => r[0]?.name ?? "Professor");
 
     await db.insert(notifications).values({
       userId: item.professorId,

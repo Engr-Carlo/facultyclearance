@@ -8,7 +8,7 @@ import {
   semesters,
   departments,
 } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import ChairReviewPanel from "@/components/review/ChairReviewPanel";
 import DeadlineBanner from "@/components/ui/DeadlineBanner";
 

@@ -42,7 +42,7 @@ type Semester = {
 
 export default function DeanDashboardPanel({
   deptSummaries,
-  semesterId,
+  semesterId: _semesterId,
   activeSemester,
 }: {
   deptSummaries: DeptSummary[];
@@ -361,7 +361,6 @@ function StatCard({
   label,
   value,
   color,
-  highlight,
 }: {
   label: string;
   value: number;

@@ -14,7 +14,7 @@ export default function NotificationBell({
   userId,
   unreadCount: initialCount,
 }: {
-  userId: string;
+  userId?: string;
   unreadCount: number;
 }) {
   const [open, setOpen] = useState(false);

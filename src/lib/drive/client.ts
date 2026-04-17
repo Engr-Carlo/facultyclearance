@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { db } from "@/lib/db";
-import { accounts, departments, users, semesters, requirements, professorRequirements } from "@/lib/db/schema";
+import { accounts, departments, users, semesters } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 // ─── Service Account ─────────────────────────────────────────────────────────

@@ -27,7 +27,7 @@ type ProfessorSummary = {
 
 export default function ChairReviewPanel({
   professors,
-  semesterId,
+  semesterId: _semesterId,
 }: {
   professors: ProfessorSummary[];
   semesterId: string;
