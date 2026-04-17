@@ -11,7 +11,7 @@ type Notification = {
 };
 
 export default function NotificationBell({
-  userId,
+  userId: _userId,
   unreadCount: initialCount,
 }: {
   userId?: string;

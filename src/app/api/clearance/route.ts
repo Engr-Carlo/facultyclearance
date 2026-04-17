@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
 async function notifyChair(
   professorId: string,
   clearanceItemId: string,
-  semesterId: string
+  _semesterId: string
 ) {
   // Find the professor's department chair
   const prof = await db
