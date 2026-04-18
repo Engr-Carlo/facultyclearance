@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import type { Role } from "@/lib/db/schema";
 
 export const authOptions: NextAuthOptions = {
+  debug: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
