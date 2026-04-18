@@ -77,7 +77,6 @@ export default async function ChairDashboard() {
     const pending = profItems.filter((i) => i.status === "submitted").length;
     return {
       ...prof,
-      name: prof.name ?? prof.email,
       items: profItems,
       total,
       approved,

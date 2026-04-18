@@ -59,7 +59,7 @@ export async function provisionSemesterFolders(semesterId: string): Promise<stri
       .where(and(eq(users.departmentId, dept.id), eq(users.role, "professor")));
 
     for (const prof of deptProfs) {
-      const safeName = (prof.name ?? `Professor-${prof.id}`).replace(/[^a-zA-Z0-9 _-]/g, "");
+      const safeName = prof.name.replace(/[^a-zA-Z0-9 _-]/g, "");
       await getOrCreateFolder(drive, `Prof-${safeName}`, deptFolderId);
     }
   }
@@ -108,7 +108,7 @@ export async function getProfessorFolderId(
     dept?.name ?? "Unassigned",
     semFolderId
   );
-  const safeName = (professor.name ?? `Professor-${professorId}`).replace(/[^a-zA-Z0-9 _-]/g, "");
+  const safeName = professor.name.replace(/[^a-zA-Z0-9 _-]/g, "");
   const profFolderId = await getOrCreateFolder(
     drive,
     `Prof-${safeName}`,
