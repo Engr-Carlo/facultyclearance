@@ -194,7 +194,6 @@ export default function ClearanceChecklist({
                       )}
                       {item.status === "submitted" && (
                         <button
-                          onClick={() => handleUpload(item)}
                           disabled
                           className="text-xs text-gray-400 cursor-default"
                         >
