@@ -2,11 +2,13 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 const ROLE_HOME: Record<string, string> = {
-  professor: "/dashboard/professor",
-  chair: "/dashboard/chair",
-  dean: "/dashboard/dean",
-  admin: "/dashboard/admin",
+  professor: "/professor",
+  chair: "/chair",
+  dean: "/dean",
+  admin: "/admin",
 };
+
+const VALID_ROLE_SEGMENTS = new Set(["professor", "chair", "dean", "admin"]);
 
 export default withAuth(
   function middleware(req) {
@@ -20,10 +22,10 @@ export default withAuth(
       return NextResponse.redirect(new URL(dest, req.url));
     }
 
-    // Enforce role-scoped dashboard access
-    if (pathname.startsWith("/dashboard/")) {
-      const segment = pathname.split("/")[2]; // professor | chair | dean | admin
-      if (!role || ROLE_HOME[role] !== `/dashboard/${segment}`) {
+    // Enforce role-scoped access: /professor, /chair, /dean, /admin
+    const segment = pathname.split("/")[1]; // first path segment
+    if (VALID_ROLE_SEGMENTS.has(segment)) {
+      if (!role || ROLE_HOME[role] !== `/${segment}`) {
         const dest = role ? ROLE_HOME[role] ?? "/login" : "/login";
         return NextResponse.redirect(new URL(dest, req.url));
       }
@@ -41,5 +43,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*"],
+  matcher: ["/", "/professor/:path*", "/chair/:path*", "/dean/:path*", "/admin/:path*"],
 };
