@@ -5,6 +5,10 @@ import { users, accounts } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Role } from "@/lib/db/schema";
 
+type GoogleProfileWithEmailVerified = {
+  email_verified?: boolean;
+};
+
 export const authOptions: NextAuthOptions = {
   debug: true,
   // NO adapter — we handle user/account upsert manually to avoid
@@ -29,6 +33,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (!account || !profile?.email) return false;
+
+      const googleProfile = profile as GoogleProfileWithEmailVerified;
 
       try {
         // Upsert user
@@ -57,7 +63,7 @@ export const authOptions: NextAuthOptions = {
               email: profile.email,
               name: user.name,
               image: user.image,
-              emailVerified: profile.email_verified ? new Date() : null,
+              emailVerified: googleProfile.email_verified ? new Date() : null,
             })
             .returning({ id: users.id })
             .then((r) => r[0]);
