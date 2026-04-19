@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 type ChecklistItem = {
@@ -39,6 +39,8 @@ export default function ClearanceChecklist({
 }) {
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingItemRef = useRef<ChecklistItem | null>(null);
 
   // Group items by term
   const grouped: Record<string, ChecklistItem[]> = {};
@@ -47,50 +49,57 @@ export default function ClearanceChecklist({
     grouped[item.term].push(item);
   }
 
-  async function handleUpload(item: ChecklistItem) {
+  function handleUploadClick(item: ChecklistItem) {
+    pendingItemRef.current = item;
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const item = pendingItemRef.current;
+    if (!file || !item) return;
+
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+
     setError(null);
     setUploading(item.id);
     try {
-      // Fetch a Picker OAuth token from our API
-      const tokenRes = await fetch("/api/drive/picker-token");
-      const { token } = await tokenRes.json();
-      if (!token) throw new Error("Could not get Drive token");
+      // Upload file to Drive via service account backend
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("semesterId", semesterId);
 
-      const pickerApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
-      const appId = process.env.NEXT_PUBLIC_GOOGLE_APP_ID!;
+      const uploadRes = await fetch("/api/drive/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error ?? "Upload failed");
 
-      await loadPickerScript();
-
-      // Open Google Picker
-      const fileData = await openDrivePicker(token, pickerApiKey, appId);
-      if (!fileData) {
-        setUploading(null);
-        return;
-      }
-
-      // Submit to our API
+      // Submit clearance item record
       const res = await fetch("/api/clearance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requirementId: item.requirementId,
-          driveFileId: fileData.id,
-          driveFileName: fileData.name,
+          driveFileId: uploadData.fileId,
+          driveFileName: uploadData.fileName,
           semesterId,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? "Upload failed");
+        throw new Error(err.error ?? "Submit failed");
       }
 
-      // Refresh page to reflect new status
       window.location.reload();
-    } catch (e: any) {
-      setError(e.message ?? "Upload failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploading(null);
+      pendingItemRef.current = null;
     }
   }
 
@@ -105,6 +114,15 @@ export default function ClearanceChecklist({
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+        onChange={handleFileChange}
+      />
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
           {error}
@@ -167,7 +185,7 @@ export default function ClearanceChecklist({
                     <td className="px-4 py-3 text-right">
                       {(item.status === "not_submitted" || item.status === "returned") && (
                         <button
-                          onClick={() => handleUpload(item)}
+                          onClick={() => handleUploadClick(item)}
                           disabled={uploading === item.id}
                           className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                         >
@@ -193,46 +211,4 @@ export default function ClearanceChecklist({
       ))}
     </div>
   );
-}
-
-// ─── Google Picker helpers ────────────────────────────────────────────────────
-
-function loadPickerScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).google?.picker) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://apis.google.com/js/api.js";
-    script.onload = () => {
-      (window as any).gapi.load("picker", { callback: resolve });
-    };
-    script.onerror = reject;
-    document.body.appendChild(script);
-  });
-}
-
-function openDrivePicker(
-  oauthToken: string,
-  apiKey: string,
-  appId: string
-): Promise<{ id: string; name: string } | null> {
-  return new Promise((resolve) => {
-    const picker = new (window as any).google.picker.PickerBuilder()
-      .addView(new (window as any).google.picker.DocsView())
-      .setOAuthToken(oauthToken)
-      .setDeveloperKey(apiKey)
-      .setAppId(appId)
-      .setCallback((data: any) => {
-        if (data.action === "picked") {
-          const doc = data.docs[0];
-          resolve({ id: doc.id, name: doc.name });
-        } else if (data.action === "cancel") {
-          resolve(null);
-        }
-      })
-      .build();
-    picker.setVisible(true);
-  });
 }
