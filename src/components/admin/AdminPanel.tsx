@@ -89,7 +89,6 @@ export default function AdminPanel({
 
   // Requirements list (fetched on demand)
   const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [reqsFetched, setReqsFetched] = useState(false);
 
   async function post(entity: string, body: Record<string, unknown>) {
     setLoading(true);
@@ -201,7 +200,6 @@ export default function AdminPanel({
       setReqSubjectCode("");
       setReqSubjectName("");
       setReqDesc("");
-      setReqsFetched(false);
       await fetchRequirements();
       alert("Requirement created");
     } catch (err: unknown) {
@@ -230,7 +228,6 @@ export default function AdminPanel({
     const res = await fetch("/api/admin?entity=requirements");
     const data = await res.json();
     if (Array.isArray(data)) setRequirements(data);
-    setReqsFetched(true);
   }
 
   const TABS: { key: Tab; label: string }[] = [
