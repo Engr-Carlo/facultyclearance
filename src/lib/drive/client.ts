@@ -119,21 +119,27 @@ export async function getProfessorFolderId(
 }
 
 /**
- * Returns a short-lived OAuth access token for the user's Google account,
- * scoped for the Picker API. Reads the stored account access_token.
+ * Share a folder with a professor (writer access) so they can upload files into it.
+ * Silently ignores errors if the permission already exists.
  */
-export async function getDrivePickerToken(userId: string): Promise<string> {
-  const account = await db
-    .select({ accessToken: accounts.access_token })
-    .from(accounts)
-    .where(and(eq(accounts.userId, userId), eq(accounts.provider, "google")))
-    .then((r) => r[0]);
-
-  if (!account?.accessToken) {
-    throw new Error("No Google OAuth token found for user");
+export async function shareFolderWithProfessor(
+  folderId: string,
+  professorEmail: string
+) {
+  const drive = getDriveClient();
+  try {
+    await drive.permissions.create({
+      fileId: folderId,
+      requestBody: {
+        role: "writer",
+        type: "user",
+        emailAddress: professorEmail,
+      },
+      sendNotificationEmail: false,
+    });
+  } catch {
+    // Permission may already exist — proceed silently
   }
-
-  return account.accessToken;
 }
 
 /**

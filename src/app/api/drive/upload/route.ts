@@ -3,16 +3,25 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { google } from "googleapis";
 import { db } from "@/lib/db";
-import { accounts } from "@/lib/db/schema";
+import { accounts, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  getProfessorFolderId,
+  shareFolderWithProfessor,
+} from "@/lib/drive/client";
 import { Readable } from "stream";
 
 /**
  * POST /api/drive/upload
  * Accepts multipart/form-data: { file, semesterId }
  *
- * Uploads the file to the professor's own Google Drive using their OAuth token
- * (service accounts have zero storage quota, so we use the user's token).
+ * 1. Service account creates/gets the centralized folder:
+ *    /ClearanceSystem/<semester>/<department>/Prof-<name>/
+ * 2. Service account shares that folder with the professor (writer)
+ * 3. Professor's OAuth token uploads the file INTO the system folder
+ *    (uses professor's 15 GB quota, but file lives in the system tree)
+ * 4. Professor's token sets "anyone with link" reader permission
+ *
  * Returns { fileId, fileName }.
  */
 export async function POST(req: NextRequest) {
@@ -35,18 +44,28 @@ export async function POST(req: NextRequest) {
 
     const professorId = session.user.id;
 
-    // Get the professor's Google OAuth tokens from the accounts table
-    const account = await db
-      .select({
-        accessToken: accounts.access_token,
-        refreshToken: accounts.refresh_token,
-        expiresAt: accounts.expires_at,
-      })
-      .from(accounts)
-      .where(
-        and(eq(accounts.userId, professorId), eq(accounts.provider, "google"))
-      )
-      .then((r) => r[0]);
+    // ── 1. Fetch professor's OAuth tokens + email ───────────────────────
+    const [account, professor] = await Promise.all([
+      db
+        .select({
+          accessToken: accounts.access_token,
+          refreshToken: accounts.refresh_token,
+          expiresAt: accounts.expires_at,
+        })
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.userId, professorId),
+            eq(accounts.provider, "google")
+          )
+        )
+        .then((r) => r[0]),
+      db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, professorId))
+        .then((r) => r[0]),
+    ]);
 
     if (!account?.refreshToken) {
       return NextResponse.json(
@@ -55,7 +74,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build an OAuth2 client with the professor's tokens
+    // ── 2. Get/create the centralized folder (service account) ─────────
+    const folderId = await getProfessorFolderId(professorId, semesterId);
+
+    // ── 3. Share the folder with the professor so they can write ───────
+    if (professor?.email) {
+      await shareFolderWithProfessor(folderId, professor.email);
+    }
+
+    // ── 4. Build OAuth2 client with professor's tokens ─────────────────
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID!,
       process.env.GOOGLE_CLIENT_SECRET!
@@ -66,7 +93,7 @@ export async function POST(req: NextRequest) {
       expiry_date: account.expiresAt ? account.expiresAt * 1000 : undefined,
     });
 
-    // If expired, refresh and persist the new token
+    // Auto-refresh expired tokens and persist
     const tokenInfo = await oauth2Client.getAccessToken();
     if (tokenInfo.token && tokenInfo.token !== account.accessToken) {
       const creds = oauth2Client.credentials;
@@ -86,9 +113,8 @@ export async function POST(req: NextRequest) {
         );
     }
 
+    // ── 5. Upload file into the system folder via professor's token ────
     const drive = google.drive({ version: "v3", auth: oauth2Client });
-
-    // Upload file to the professor's own Drive
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const stream = Readable.from(buffer);
@@ -96,6 +122,7 @@ export async function POST(req: NextRequest) {
     const uploaded = await drive.files.create({
       requestBody: {
         name: file.name,
+        parents: [folderId],
       },
       media: {
         mimeType: file.type || "application/octet-stream",
@@ -104,7 +131,7 @@ export async function POST(req: NextRequest) {
       fields: "id,name",
     });
 
-    // Make it readable by anyone with the link (so chairs/deans can view)
+    // ── 6. Make it readable by anyone with the link ────────────────────
     await drive.permissions.create({
       fileId: uploaded.data.id!,
       requestBody: {
