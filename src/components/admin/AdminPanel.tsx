@@ -82,6 +82,7 @@ export default function AdminPanel({
   const [reqSubjectName, setReqSubjectName] = useState("");
   const [reqTerm, setReqTerm] = useState("prelim");
   const [reqDesc, setReqDesc] = useState("");
+  const [reqSemIdForCreate, setReqSemIdForCreate] = useState("");
   const [reqUserId, setReqUserId] = useState("");
   const [reqSemId, setReqSemId] = useState("");
   const [reqId, setReqId] = useState("");
@@ -194,6 +195,7 @@ export default function AdminPanel({
         subjectName: reqSubjectName,
         term: reqTerm,
         description: reqDesc || null,
+        semesterId: reqSemIdForCreate,
       });
       setReqDocType("");
       setReqSubjectCode("");
@@ -553,6 +555,19 @@ export default function AdminPanel({
                 <option value="prelim">Prelim</option>
                 <option value="midterm">Midterm</option>
                 <option value="finals">Finals</option>
+              </select>
+              <select
+                value={reqSemIdForCreate}
+                onChange={(e) => setReqSemIdForCreate(e.target.value)}
+                required
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
+              >
+                <option value="">Select semester...</option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}{s.isActive ? " (Active)" : ""}
+                  </option>
+                ))}
               </select>
               <textarea
                 value={reqDesc}

@@ -1,8 +1,34 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+const ROLE_HOME: Record<string, string> = {
+  professor: "/professor",
+  chair: "/chair",
+  dean: "/dean",
+  admin: "/admin",
+};
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role) {
+      router.replace(ROLE_HOME[session.user.role] ?? "/");
+    }
+  }, [status, session, router]);
+
+  if (status === "loading") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Loading...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-2xl shadow-md p-10 w-full max-w-sm flex flex-col items-center gap-6">
@@ -21,7 +47,7 @@ export default function LoginPage() {
         </p>
 
         <button
-          onClick={() => signIn("google")}
+          onClick={() => signIn("google", { callbackUrl: "/" })}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
