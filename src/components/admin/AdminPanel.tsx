@@ -8,23 +8,23 @@ type User = {
   email: string;
   role: string;
   departmentId: string | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Department = {
   id: string;
   name: string;
   college: string;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Semester = {
   id: string;
   label: string;
   isActive: boolean;
-  deadline: Date | null;
+  deadline: string | null;
   driveFolderId: string | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Requirement = {
@@ -34,7 +34,7 @@ type Requirement = {
   subjectName: string;
   term: string;
   description: string | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type AuditLog = {
@@ -44,7 +44,7 @@ type AuditLog = {
   targetTable: string | null;
   targetId: string | null;
   metadata: unknown;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Tab = "users" | "departments" | "semesters" | "requirements" | "audit";
