@@ -201,6 +201,8 @@ export default function AdminPanel({
       setReqSubjectCode("");
       setReqSubjectName("");
       setReqDesc("");
+      setReqsFetched(false);
+      await fetchRequirements();
       alert("Requirement created");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error");
@@ -225,13 +227,9 @@ export default function AdminPanel({
   }
 
   async function fetchRequirements() {
-    if (reqsFetched) return;
     const res = await fetch("/api/admin?entity=requirements");
     const data = await res.json();
-    // API returns all entities; we fetch by searching for requirements
-    // The admin route returns them under the requirements key when entity=requirements
     if (Array.isArray(data)) setRequirements(data);
-    else if (data.requirements) setRequirements(data.requirements);
     setReqsFetched(true);
   }
 

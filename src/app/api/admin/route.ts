@@ -53,12 +53,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(rows);
   }
 
+  if (entity === "requirements") {
+    const rows = await db
+      .select()
+      .from(requirements)
+      .orderBy(requirements.createdAt);
+    return NextResponse.json(rows);
+  }
+
   if (entity === "audit") {
     const rows = await db
       .select()
       .from(auditLogs)
       .orderBy(auditLogs.createdAt)
       .limit(200);
+    return NextResponse.json(rows);
+  }
+
+  if (entity === "requirements") {
+    const rows = await db.select().from(requirements).orderBy(requirements.subjectCode);
     return NextResponse.json(rows);
   }
 
