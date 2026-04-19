@@ -31,27 +31,36 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   callbacks: {
-    async session({ session, user }) {
-      // Hydrate role + department into every session
-      const dbUser = await db
-        .select({
-          id: users.id,
-          role: users.role,
-          departmentId: users.departmentId,
-        })
-        .from(users)
-        .where(eq(users.id, user.id))
-        .then((rows) => rows[0]);
+    async jwt({ token, user, trigger }) {
+      // On initial sign-in or whenever we need fresh data
+      if (user || trigger === "update") {
+        const dbUser = await db
+          .select({
+            id: users.id,
+            role: users.role,
+            departmentId: users.departmentId,
+          })
+          .from(users)
+          .where(eq(users.id, token.sub!))
+          .then((rows) => rows[0]);
 
-      if (dbUser) {
-        session.user.id = dbUser.id;
-        session.user.role = dbUser.role as Role;
-        session.user.departmentId = dbUser.departmentId ?? undefined;
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.departmentId = dbUser.departmentId;
+        }
       }
-
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.departmentId = (token.departmentId as string) ?? undefined;
+      }
       return session;
     },
   },
