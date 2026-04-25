@@ -1,7 +1,22 @@
 import { google } from "googleapis";
 import { db } from "@/lib/db";
-import { departments, users, semesters } from "@/lib/db/schema";
+import { departments, users, semesters, requirements } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+
+// Doc types that belong under the "Term Examination" parent folder
+const TERM_EXAM_SUBTYPES = new Set([
+  "Laboratory Exam",
+  "Lecture Exam",
+  "TOS",
+  "Sample Checked Exam",
+]);
+
+// Capitalise term enum values for folder names
+const TERM_LABELS: Record<string, string> = {
+  prelim: "Prelim",
+  midterm: "Midterm",
+  finals: "Finals",
+};
 
 // ─── Service Account ─────────────────────────────────────────────────────────
 
@@ -116,6 +131,51 @@ export async function getProfessorFolderId(
   );
 
   return profFolderId;
+}
+
+/**
+ * Returns the Drive folder ID for a specific requirement inside the professor's tree.
+ * Folder structure:
+ *   Term Exam subtypes → Prof-<Name>/Term Examination/<Term>/<SubjectCode>/<DocType>/
+ *   Everything else   → Prof-<Name>/<DocType>/<SubjectCode>/<Term>/
+ *
+ * Both paths are created lazily on first upload.
+ */
+export async function getRequirementFolderId(
+  professorId: string,
+  semesterId: string,
+  requirementId: string
+): Promise<string> {
+  const [profFolderId, req] = await Promise.all([
+    getProfessorFolderId(professorId, semesterId),
+    db
+      .select({
+        docType: requirements.docType,
+        subjectCode: requirements.subjectCode,
+        term: requirements.term,
+      })
+      .from(requirements)
+      .where(eq(requirements.id, requirementId))
+      .then((r) => r[0]),
+  ]);
+
+  if (!req) throw new Error("Requirement not found");
+
+  const drive = getDriveClient();
+  const termLabel = TERM_LABELS[req.term] ?? req.term;
+
+  if (TERM_EXAM_SUBTYPES.has(req.docType)) {
+    // Term Examination / <Term> / <SubjectCode> / <DocType>
+    const termExamId = await getOrCreateFolder(drive, "Term Examination", profFolderId);
+    const termId = await getOrCreateFolder(drive, termLabel, termExamId);
+    const subjectId = await getOrCreateFolder(drive, req.subjectCode, termId);
+    return getOrCreateFolder(drive, req.docType, subjectId);
+  } else {
+    // <DocType> / <SubjectCode> / <Term>
+    const docTypeId = await getOrCreateFolder(drive, req.docType, profFolderId);
+    const subjectId = await getOrCreateFolder(drive, req.subjectCode, docTypeId);
+    return getOrCreateFolder(drive, termLabel, subjectId);
+  }
 }
 
 /**

@@ -69,6 +69,7 @@ export default function ClearanceChecklist({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("semesterId", semesterId);
+      formData.append("requirementId", item.requirementId);
 
       const uploadRes = await fetch("/api/drive/upload", {
         method: "POST",

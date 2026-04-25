@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { accounts, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
-  getProfessorFolderId,
+  getRequirementFolderId,
   shareFolderWithProfessor,
 } from "@/lib/drive/client";
 import { Readable } from "stream";
@@ -34,10 +34,11 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const semesterId = formData.get("semesterId") as string | null;
+    const requirementId = formData.get("requirementId") as string | null;
 
-    if (!file || !semesterId) {
+    if (!file || !semesterId || !requirementId) {
       return NextResponse.json(
-        { error: "file and semesterId required" },
+        { error: "file, semesterId, and requirementId required" },
         { status: 400 }
       );
     }
@@ -74,8 +75,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 2. Get/create the centralized folder (service account) ─────────
-    const folderId = await getProfessorFolderId(professorId, semesterId);
+    // ── 2. Get/create the requirement-specific leaf folder (service account) ─
+    const folderId = await getRequirementFolderId(professorId, semesterId, requirementId);
 
     // ── 3. Share the folder with the professor so they can write ───────
     if (professor?.email) {
