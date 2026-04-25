@@ -24,7 +24,7 @@ type TreeNode = {
   id: string;
   parentId: string | null;
   name: string;
-  nodeType: "folder" | "leaf";
+  nodeType: string;          // DB returns plain string; narrowed to 'leaf' check at render
   typeTag: string | null;
   hasLabComponent: boolean;
   sortOrder: number;
