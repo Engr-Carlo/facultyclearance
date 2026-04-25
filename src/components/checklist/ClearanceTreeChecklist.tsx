@@ -55,14 +55,13 @@ function buildTree(flat: TreeNode[]): UINode[] {
 function UploadRow({
   label,
   item,
-  semesterId,
   treeNodeId,
   uploading,
   onUploadClick,
 }: {
   label: string;
   item: ClearanceItem | undefined;
-  semesterId: string;
+  semesterId?: string;
   treeNodeId: string;
   uploading: string | null;
   onUploadClick: (requirementId: string, treeNodeId: string) => void;

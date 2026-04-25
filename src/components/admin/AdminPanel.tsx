@@ -77,19 +77,7 @@ export default function AdminPanel({
   const [semYear, setSemYear] = useState("");
   const [semDeadline, setSemDeadline] = useState("");
 
-  // Requirement form
-  const [reqDocType, setReqDocType] = useState("");
-  const [reqSubjectCode, setReqSubjectCode] = useState("");
-  const [reqSubjectName, setReqSubjectName] = useState("");
-  const [reqTerm, setReqTerm] = useState("prelim");
-  const [reqDesc, setReqDesc] = useState("");
-  const [reqSemIdForCreate, setReqSemIdForCreate] = useState("");
-  const [reqUserId, setReqUserId] = useState("");
-  const [reqSemId, setReqSemId] = useState("");
-  const [reqId, setReqId] = useState("");
 
-  // Requirements list (fetched on demand)
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
   // Tree editor semester selection
   const [treeSemId, setTreeSemId] = useState<string>("");
 
@@ -188,50 +176,7 @@ export default function AdminPanel({
     }
   }
 
-  async function createRequirement(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await post("requirement", {
-        docType: reqDocType,
-        subjectCode: reqSubjectCode,
-        subjectName: reqSubjectName,
-        term: reqTerm,
-        description: reqDesc || null,
-        semesterId: reqSemIdForCreate,
-      });
-      setReqDocType("");
-      setReqSubjectCode("");
-      setReqSubjectName("");
-      setReqDesc("");
-      await fetchRequirements();
-      alert("Requirement created");
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error");
-    }
-  }
 
-  async function assignRequirement(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await post("professor-requirement", {
-        professorId: reqUserId,
-        requirementId: reqId,
-        semesterId: reqSemId,
-      });
-      setReqUserId("");
-      setReqId("");
-      setReqSemId("");
-      alert("Requirement assigned to professor");
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error");
-    }
-  }
-
-  async function fetchRequirements() {
-    const res = await fetch("/api/admin?entity=requirements");
-    const data = await res.json();
-    if (Array.isArray(data)) setRequirements(data);
-  }
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "users", label: "Users" },
@@ -250,7 +195,6 @@ export default function AdminPanel({
             key={t.key}
             onClick={() => {
               setTab(t.key);
-              if (t.key === "requirements") fetchRequirements();
             }}
             className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
               tab === t.key

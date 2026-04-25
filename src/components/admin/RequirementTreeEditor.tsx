@@ -61,16 +61,6 @@ function buildTree(flat: TreeNodeData[]): UINode[] {
   return roots;
 }
 
-// ─── Flatten tree back to ordered list ───────────────────────────────────────
-
-function flattenTree(nodes: UINode[], out: UINode[] = []): UINode[] {
-  for (const n of nodes) {
-    out.push(n);
-    flattenTree(n.children, out);
-  }
-  return out;
-}
-
 // ─── Sortable row ─────────────────────────────────────────────────────────────
 
 function SortableRow({
@@ -452,7 +442,7 @@ export default function RequirementTreeEditor({ semesterId }: { semesterId: stri
                   onToggle={(id) =>
                     setExpanded((prev) => {
                       const next = new Set(prev);
-                      next.has(id) ? next.delete(id) : next.add(id);
+                      if (next.has(id)) { next.delete(id); } else { next.add(id); }
                       return next;
                     })
                   }
