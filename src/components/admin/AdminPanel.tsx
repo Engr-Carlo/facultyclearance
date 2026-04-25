@@ -28,16 +28,6 @@ type Semester = {
   createdAt: string;
 };
 
-type Requirement = {
-  id: string;
-  docType: string;
-  subjectCode: string;
-  subjectName: string;
-  term: string;
-  description: string | null;
-  createdAt: string;
-};
-
 type AuditLog = {
   id: string;
   actorId: string | null;
