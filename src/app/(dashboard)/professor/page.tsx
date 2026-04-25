@@ -27,14 +27,19 @@ export default async function ProfessorDashboard() {
     .where(eq(semesters.isActive, true))
     .then((r) => r[0] ?? null);
 
-  // Get tree nodes for active semester
-  const treeNodes = activeSemester
-    ? await db
+  // Get tree nodes for active semester (gracefully handles missing table)
+  let treeNodes: typeof import("@/lib/db/schema").requirementTreeNodes.$inferSelect[] = [];
+  if (activeSemester) {
+    try {
+      treeNodes = await db
         .select()
         .from(requirementTreeNodes)
         .where(eq(requirementTreeNodes.semesterId, activeSemester.id))
-        .orderBy(requirementTreeNodes.sortOrder)
-    : [];
+        .orderBy(requirementTreeNodes.sortOrder);
+    } catch {
+      // Table may not exist yet — page still renders with empty tree
+    }
+  }
 
   // Provision Drive folders lazily (fire-and-forget)
   if (activeSemester && treeNodes.length > 0) {

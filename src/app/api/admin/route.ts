@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { neon } from "@neondatabase/serverless";
 import {
   users,
   departments,
@@ -289,6 +290,30 @@ export async function POST(req: NextRequest) {
       .returning();
 
     return NextResponse.json(node, { status: 201 });
+  }
+
+  if (entity === "migrate-tree") {
+    try {
+      const sql = neon(process.env.DATABASE_URL!);
+      await sql`
+        CREATE TABLE IF NOT EXISTS requirement_tree_nodes (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          semester_id UUID NOT NULL REFERENCES semesters(id) ON DELETE CASCADE,
+          parent_id UUID REFERENCES requirement_tree_nodes(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          node_type TEXT NOT NULL DEFAULT 'folder',
+          type_tag TEXT,
+          has_lab_component BOOLEAN NOT NULL DEFAULT false,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          requirement_ids TEXT,
+          created_at TIMESTAMP DEFAULT now() NOT NULL
+        )
+      `;
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      console.error("[migrate-tree]", err);
+      return NextResponse.json({ error: "Migration failed" }, { status: 500 });
+    }
   }
 
   if (entity === "provision-drive") {

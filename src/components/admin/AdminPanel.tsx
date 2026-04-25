@@ -166,6 +166,21 @@ export default function AdminPanel({
     }
   }
 
+  async function runTreeMigration() {
+    try {
+      const res = await fetch("/api/admin?entity=migrate-tree", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Migration failed");
+      alert("Migration successful! Requirement tree table is ready.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Migration failed");
+    }
+  }
+
 
 
   const TABS: { key: Tab; label: string }[] = [
@@ -451,6 +466,19 @@ export default function AdminPanel({
       {/* Requirements tab */}
       {tab === "requirements" && (
         <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-amber-800">First-time setup required</p>
+              <p className="text-xs text-amber-600 mt-0.5">Run the DB migration once to create the requirement tree table.</p>
+            </div>
+            <button
+              onClick={runTreeMigration}
+              className="text-xs bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 shrink-0"
+            >
+              Run Migration
+            </button>
+          </div>
+
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <label className="text-sm font-medium text-gray-700 block mb-2">
               Select Semester to Edit Tree
