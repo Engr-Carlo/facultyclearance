@@ -9,7 +9,7 @@ import {
   integer,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +76,27 @@ export const semesters = pgTable("semesters", {
   isActive: boolean("is_active").notNull().default(false),
   deadline: timestamp("deadline"),
   driveFolderId: text("drive_folder_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Requirement Tree ─────────────────────────────────────────────────────────
+// Each semester has an independent tree. Folder nodes are groupings.
+// Leaf nodes are the actual upload slots (each linked to a requirements row).
+// typeTag values: 'Category' | 'Subject' | 'DocType' | 'Term'
+
+export const requirementTreeNodes = pgTable("requirement_tree_nodes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  semesterId: uuid("semester_id")
+    .notNull()
+    .references(() => semesters.id, { onDelete: "cascade" }),
+  parentId: uuid("parent_id"), // self-reference added via alter — nullable = root node
+  name: text("name").notNull(),
+  nodeType: text("node_type").notNull().default("folder"), // 'folder' | 'leaf'
+  typeTag: text("type_tag"), // 'Category' | 'Subject' | 'DocType' | 'Term' | null
+  hasLabComponent: boolean("has_lab_component").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  // For leaf nodes: comma-separated requirementIds (two if hasLabComponent=true)
+  requirementIds: text("requirement_ids"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -230,7 +251,24 @@ export const semestersRelations = relations(semesters, ({ many }) => ({
   requirements: many(requirements),
   clearanceItems: many(clearanceItems),
   professorRequirements: many(professorRequirements),
+  treeNodes: many(requirementTreeNodes),
 }));
+
+export const requirementTreeNodesRelations = relations(
+  requirementTreeNodes,
+  ({ one, many }) => ({
+    semester: one(semesters, {
+      fields: [requirementTreeNodes.semesterId],
+      references: [semesters.id],
+    }),
+    parent: one(requirementTreeNodes, {
+      fields: [requirementTreeNodes.parentId],
+      references: [requirementTreeNodes.id],
+      relationName: "parent_child",
+    }),
+    children: many(requirementTreeNodes, { relationName: "parent_child" }),
+  })
+);
 
 export const requirementsRelations = relations(
   requirements,
@@ -278,6 +316,7 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
+export type TreeNode = typeof requirementTreeNodes.$inferSelect;
 export type Department = typeof departments.$inferSelect;
 export type Semester = typeof semesters.$inferSelect;
 export type Requirement = typeof requirements.$inferSelect;

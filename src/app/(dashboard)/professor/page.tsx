@@ -4,13 +4,15 @@ import { db } from "@/lib/db";
 import {
   clearanceItems,
   requirements,
+  requirementTreeNodes,
   semesters,
   reviews,
   notifications,
 } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import ClearanceChecklist from "@/components/checklist/ClearanceChecklist";
+import ClearanceTreeChecklist from "@/components/checklist/ClearanceTreeChecklist";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import { ensureProfessorFoldersFromTree } from "@/lib/drive/client";
 
 export default async function ProfessorDashboard() {
   const session = await getServerSession(authOptions);
@@ -24,6 +26,20 @@ export default async function ProfessorDashboard() {
     .from(semesters)
     .where(eq(semesters.isActive, true))
     .then((r) => r[0] ?? null);
+
+  // Get tree nodes for active semester
+  const treeNodes = activeSemester
+    ? await db
+        .select()
+        .from(requirementTreeNodes)
+        .where(eq(requirementTreeNodes.semesterId, activeSemester.id))
+        .orderBy(requirementTreeNodes.sortOrder)
+    : [];
+
+  // Provision Drive folders lazily (fire-and-forget)
+  if (activeSemester && treeNodes.length > 0) {
+    ensureProfessorFoldersFromTree(professorId, activeSemester.id).catch(console.error);
+  }
 
   // Get clearance items with requirement info
   const items = activeSemester
@@ -141,7 +157,8 @@ export default async function ProfessorDashboard() {
       )}
 
       {activeSemester ? (
-        <ClearanceChecklist
+        <ClearanceTreeChecklist
+          nodes={treeNodes}
           items={items.map((item) => ({
             ...item,
             latestReview: reviewMap.get(item.id) ?? null,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import RequirementTreeEditor from "./RequirementTreeEditor";
 
 type User = {
   id: string;
@@ -89,6 +90,8 @@ export default function AdminPanel({
 
   // Requirements list (fetched on demand)
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  // Tree editor semester selection
+  const [treeSemId, setTreeSemId] = useState<string>("");
 
   async function post(entity: string, body: Record<string, unknown>) {
     setLoading(true);
@@ -514,159 +517,31 @@ export default function AdminPanel({
       {/* Requirements tab */}
       {tab === "requirements" && (
         <div className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Create requirement */}
-            <form
-              onSubmit={createRequirement}
-              className="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Select Semester to Edit Tree
+            </label>
+            <select
+              value={treeSemId}
+              onChange={(e) => setTreeSemId(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full max-w-sm"
             >
-              <h3 className="text-sm font-semibold text-gray-800">New Requirement</h3>
-              <input
-                value={reqDocType}
-                onChange={(e) => setReqDocType(e.target.value)}
-                required
-                placeholder="Document type (e.g. Grade Sheet)"
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-teal-400"
-              />
-              <input
-                value={reqSubjectCode}
-                onChange={(e) => setReqSubjectCode(e.target.value)}
-                required
-                placeholder="Subject code (e.g. CS101)"
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-teal-400"
-              />
-              <input
-                value={reqSubjectName}
-                onChange={(e) => setReqSubjectName(e.target.value)}
-                required
-                placeholder="Subject name"
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-teal-400"
-              />
-              <select
-                value={reqTerm}
-                onChange={(e) => setReqTerm(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
-              >
-                <option value="prelim">Prelim</option>
-                <option value="midterm">Midterm</option>
-                <option value="finals">Finals</option>
-              </select>
-              <select
-                value={reqSemIdForCreate}
-                onChange={(e) => setReqSemIdForCreate(e.target.value)}
-                required
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
-              >
-                <option value="">Select semester...</option>
-                {semesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}{s.isActive ? " (Active)" : ""}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={reqDesc}
-                onChange={(e) => setReqDesc(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full resize-none focus:outline-none focus:ring-1 focus:ring-teal-400"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="text-sm bg-teal-600 text-white px-4 py-1.5 rounded-lg hover:bg-teal-700 disabled:opacity-50 w-full transition-colors"
-              >
-                Create Requirement
-              </button>
-            </form>
-
-            {/* Assign requirement */}
-            <form
-              onSubmit={assignRequirement}
-              className="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
-            >
-              <h3 className="text-sm font-semibold text-gray-800">Assign to Professor</h3>
-              <select
-                value={reqUserId}
-                onChange={(e) => setReqUserId(e.target.value)}
-                required
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
-              >
-                <option value="">Select professor...</option>
-                {users
-                  .filter((u) => u.role === "professor")
-                  .map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name ?? u.email}
-                    </option>
-                  ))}
-              </select>
-              <select
-                value={reqSemId}
-                onChange={(e) => setReqSemId(e.target.value)}
-                required
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
-              >
-                <option value="">Select semester...</option>
-                {semesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={reqId}
-                onChange={(e) => setReqId(e.target.value)}
-                required
-                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
-              >
-                <option value="">Select requirement...</option>
-                {requirements.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.subjectCode} — {r.docType} ({r.term})
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                disabled={loading}
-                className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 w-full transition-colors"
-              >
-                Assign
-              </button>
-            </form>
+              <option value="">Choose a semester…</option>
+              {semesters.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}{s.isActive ? " (Active)" : ""}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="text-left px-4 py-3 font-medium">Subject</th>
-                  <th className="text-left px-4 py-3 font-medium">Doc Type</th>
-                  <th className="text-left px-4 py-3 font-medium">Term</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {requirements.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{r.subjectCode}</div>
-                      <div className="text-xs text-gray-400">{r.subjectName}</div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{r.docType}</td>
-                    <td className="px-4 py-3 capitalize text-gray-500">{r.term}</td>
-                  </tr>
-                ))}
-                {requirements.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-gray-400 text-xs">
-                      No requirements created yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {treeSemId ? (
+            <RequirementTreeEditor semesterId={treeSemId} />
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">
+              Pick a semester above to view or edit its requirement tree.
+            </p>
+          )}
         </div>
       )}
 

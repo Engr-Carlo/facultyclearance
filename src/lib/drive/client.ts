@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { db } from "@/lib/db";
-import { departments, users, semesters, requirements } from "@/lib/db/schema";
+import { departments, users, semesters, requirements, requirementTreeNodes } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 // Doc types that belong under the "Term Examination" parent folder
@@ -220,6 +220,87 @@ export async function grantReadAccess(fileId: string, email: string) {
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Ensures the Drive folder tree for a professor mirrors the requirement tree nodes.
+ * Creates ClearanceSystem/<Sem>/<Dept>/Prof-<Name>/<tree node path> for every node.
+ * Called lazily on professor login — fire and forget.
+ */
+export async function ensureProfessorFoldersFromTree(
+  professorId: string,
+  semesterId: string
+): Promise<void> {
+  const drive = getDriveClient();
+
+  const [professor, semester, nodes] = await Promise.all([
+    db
+      .select({ name: users.name, email: users.email, departmentId: users.departmentId })
+      .from(users)
+      .where(eq(users.id, professorId))
+      .then((r) => r[0]),
+    db
+      .select({ label: semesters.label })
+      .from(semesters)
+      .where(eq(semesters.id, semesterId))
+      .then((r) => r[0]),
+    db
+      .select()
+      .from(requirementTreeNodes)
+      .where(eq(requirementTreeNodes.semesterId, semesterId))
+      .orderBy(requirementTreeNodes.sortOrder),
+  ]);
+
+  if (!professor || !semester) return;
+
+  const dept = professor.departmentId
+    ? await db
+        .select({ name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, professor.departmentId))
+        .then((r) => r[0])
+    : null;
+
+  // Build professor root folder path
+  const rootId = await getOrCreateFolder(drive, "ClearanceSystem", null);
+  const semFolderId = await getOrCreateFolder(drive, semester.label, rootId);
+  const deptFolderId = await getOrCreateFolder(drive, dept?.name ?? "Unassigned", semFolderId);
+  const safeName = (professor.name ?? `Professor-${professorId}`).replace(/[^a-zA-Z0-9 _-]/g, "");
+  const profFolderId = await getOrCreateFolder(drive, `Prof-${safeName}`, deptFolderId);
+
+  // Build a map: nodeId → driveId for folder creation
+  const nodeToFolderId = new Map<string, string>();
+
+  // Process nodes in order (parents before children since sorted by sortOrder at same level)
+  // Build an ordered list: roots first, then children (BFS order)
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const visited = new Set<string>();
+
+  async function ensureFolder(nodeId: string): Promise<string> {
+    if (nodeToFolderId.has(nodeId)) return nodeToFolderId.get(nodeId)!;
+    if (visited.has(nodeId)) return profFolderId; // cycle guard
+    visited.add(nodeId);
+
+    const node = nodeMap.get(nodeId);
+    if (!node) return profFolderId;
+
+    const parentDriveId = node.parentId
+      ? await ensureFolder(node.parentId)
+      : profFolderId;
+
+    const folderId = await getOrCreateFolder(drive, node.name, parentDriveId);
+    nodeToFolderId.set(nodeId, folderId);
+    return folderId;
+  }
+
+  for (const node of nodes) {
+    await ensureFolder(node.id);
+  }
+
+  // Grant professor writer access on their root folder (inherits down)
+  if (professor.email) {
+    await shareFolderWithProfessor(profFolderId, professor.email).catch(() => null);
+  }
+}
 
 async function getOrCreateFolder(
   drive: ReturnType<typeof google.drive>,

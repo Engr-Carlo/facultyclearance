@@ -7,11 +7,12 @@ import {
   departments,
   semesters,
   requirements,
+  requirementTreeNodes,
   professorRequirements,
   clearanceItems,
   auditLogs,
 } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { provisionSemesterFolders } from "@/lib/drive/client";
 import { writeAuditLog } from "@/lib/audit";
 
@@ -58,6 +59,17 @@ export async function GET(req: NextRequest) {
       .select()
       .from(requirements)
       .orderBy(requirements.createdAt);
+    return NextResponse.json(rows);
+  }
+
+  if (entity === "tree") {
+    const semesterId = searchParams.get("semesterId");
+    if (!semesterId) return NextResponse.json({ error: "semesterId required" }, { status: 400 });
+    const rows = await db
+      .select()
+      .from(requirementTreeNodes)
+      .where(eq(requirementTreeNodes.semesterId, semesterId))
+      .orderBy(asc(requirementTreeNodes.sortOrder));
     return NextResponse.json(rows);
   }
 
@@ -209,6 +221,76 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Already assigned" });
   }
 
+  if (entity === "tree-node") {
+    const {
+      semesterId,
+      parentId,
+      name,
+      nodeType,
+      typeTag,
+      hasLabComponent,
+      sortOrder,
+    } = body;
+    if (!semesterId || !name) {
+      return NextResponse.json({ error: "semesterId and name required" }, { status: 400 });
+    }
+
+    let requirementIds: string | null = null;
+
+    if (nodeType === "leaf") {
+      // Derive subjectCode from name or ancestors — store name as docType
+      // The API client sends subjectCode separately for leaves
+      const subjectCode = body.subjectCode ?? name;
+      const subjectName = body.subjectName ?? subjectCode;
+      const term = body.term ?? "prelim";
+
+      const [req1] = await db
+        .insert(requirements)
+        .values({
+          subjectCode,
+          subjectName,
+          term,
+          docType: name,
+          hasLabComponent: false,
+          semesterId,
+        })
+        .returning();
+
+      if (hasLabComponent) {
+        const [req2] = await db
+          .insert(requirements)
+          .values({
+            subjectCode,
+            subjectName,
+            term,
+            docType: `${name} (Lab)`,
+            hasLabComponent: true,
+            semesterId,
+          })
+          .returning();
+        requirementIds = `${req1.id},${req2.id}`;
+      } else {
+        requirementIds = req1.id;
+      }
+    }
+
+    const [node] = await db
+      .insert(requirementTreeNodes)
+      .values({
+        semesterId,
+        parentId: parentId ?? null,
+        name,
+        nodeType: nodeType ?? "folder",
+        typeTag: typeTag ?? null,
+        hasLabComponent: hasLabComponent ?? false,
+        sortOrder: sortOrder ?? 0,
+        requirementIds,
+      })
+      .returning();
+
+    return NextResponse.json(node, { status: 201 });
+  }
+
   if (entity === "provision-drive") {
     const { semesterId } = body;
     if (!semesterId) return NextResponse.json({ error: "semesterId required" }, { status: 400 });
@@ -232,6 +314,42 @@ export async function POST(req: NextRequest) {
 }
 
 /**
+ * PATCH /api/admin?entity=tree-node — update a tree node (name, position, typeTag, etc.)
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = req.nextUrl;
+  const entity = searchParams.get("entity");
+  const body = await req.json();
+
+  if (entity === "tree-node") {
+    const { id, name, parentId, typeTag, hasLabComponent, sortOrder } = body;
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name;
+    if (parentId !== undefined) updates.parentId = parentId;
+    if (typeTag !== undefined) updates.typeTag = typeTag;
+    if (hasLabComponent !== undefined) updates.hasLabComponent = hasLabComponent;
+    if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+
+    const [updated] = await db
+      .update(requirementTreeNodes)
+      .set(updates)
+      .where(eq(requirementTreeNodes.id, id))
+      .returning();
+
+    return NextResponse.json(updated);
+  }
+
+  return NextResponse.json({ error: "Unknown entity" }, { status: 400 });
+}
+
+/**
  * DELETE /api/admin?entity=user&id=xxx
  */
 export async function DELETE(req: NextRequest) {
@@ -245,6 +363,14 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id");
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  if (entity === "tree-node") {
+    await db
+      .delete(requirementTreeNodes)
+      .where(eq(requirementTreeNodes.id, id));
+    // Cascade deletes children via DB FK; linked requirements also auto-deleted via cascade
+    return NextResponse.json({ success: true });
+  }
 
   if (entity === "user") {
     // Prevent self-deletion

@@ -3,11 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { google } from "googleapis";
 import { db } from "@/lib/db";
-import { accounts, users } from "@/lib/db/schema";
+import { accounts, users, requirementTreeNodes } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
   getRequirementFolderId,
+  getProfessorFolderId,
   shareFolderWithProfessor,
+  getDriveClient,
 } from "@/lib/drive/client";
 import { Readable } from "stream";
 
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     const semesterId = formData.get("semesterId") as string | null;
     const requirementId = formData.get("requirementId") as string | null;
+    const treeNodeId = formData.get("treeNodeId") as string | null;
 
     if (!file || !semesterId || !requirementId) {
       return NextResponse.json(
@@ -75,8 +78,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 2. Get/create the requirement-specific leaf folder (service account) ─
-    const folderId = await getRequirementFolderId(professorId, semesterId, requirementId);
+    // ── 2. Get/create the leaf folder (service account) ──────────────────────────
+    let folderId: string;
+
+    if (treeNodeId) {
+      // Build path from tree node ancestors
+      const allNodes = await db
+        .select()
+        .from(requirementTreeNodes)
+        .where(eq(requirementTreeNodes.semesterId, semesterId));
+
+      const nodeMap = new Map(allNodes.map((n) => [n.id, n]));
+      const profFolderId = await getProfessorFolderId(professorId, semesterId);
+      const driveClient = getDriveClient();
+
+      // Walk ancestor chain to build path segments
+      const segments: string[] = [];
+      let cur = nodeMap.get(treeNodeId);
+      while (cur) {
+        segments.unshift(cur.name);
+        cur = cur.parentId ? nodeMap.get(cur.parentId) : undefined;
+      }
+
+      // Create each folder segment under profFolderId
+      let parentId = profFolderId;
+      for (const seg of segments) {
+        const query = `mimeType='application/vnd.google-apps.folder' and name='${seg.replace(/'/g, "\\'")}'  and '${parentId}' in parents and trashed=false`;
+        const res = await driveClient.files.list({ q: query, fields: "files(id)", spaces: "drive" });
+        if (res.data.files && res.data.files.length > 0) {
+          parentId = res.data.files[0].id!;
+        } else {
+          const created = await driveClient.files.create({
+            requestBody: { name: seg, mimeType: "application/vnd.google-apps.folder", parents: [parentId] },
+            fields: "id",
+          });
+          parentId = created.data.id!;
+        }
+      }
+      folderId = parentId;
+    } else {
+      folderId = await getRequirementFolderId(professorId, semesterId, requirementId);
+    }
 
     // ── 3. Share the folder with the professor so they can write ───────
     if (professor?.email) {
