@@ -300,7 +300,7 @@ export default function RequirementTreeEditor({ semesterId }: { semesterId: stri
         sortOrder: flat.filter((n) => n.parentId === parentId).length,
       });
       setFlat((prev) => [...prev, node]);
-      if (parentId) setExpanded((prev) => new Set([...prev, parentId]));
+      if (parentId) setExpanded((prev) => { const s = new Set(prev); s.add(parentId); return s; });
       setEditingId(node.id);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Add failed");
