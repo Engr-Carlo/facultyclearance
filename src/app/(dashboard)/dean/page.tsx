@@ -114,16 +114,22 @@ export default async function DeanDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">College-wide Clearance</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {activeSemester?.label ?? "No active semester"} — University of Cabuyao
-        </p>
-      </div>
+      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 space-y-4">
+        <div>
+          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            Dean workspace
+          </span>
+          <h1 className="mt-3 text-2xl font-bold text-gray-900">College-wide Clearance</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {activeSemester?.label ?? "No active semester"} — University of Cabuyao
+          </p>
+          <p className="mt-2 max-w-2xl text-sm text-gray-500">
+            Start from a department summary, then move into faculty details only when a sign-off or override decision is needed.
+          </p>
+        </div>
 
-      {activeSemester && (
-        <DeadlineBanner deadline={activeSemester.deadline} />
-      )}
+        {activeSemester && <DeadlineBanner deadline={activeSemester.deadline} />}
+      </div>
 
       <DeanDashboardPanel
         deptSummaries={deptSummaries}

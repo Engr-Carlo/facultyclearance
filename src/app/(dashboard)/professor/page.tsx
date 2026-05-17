@@ -113,20 +113,28 @@ export default async function ProfessorDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Clearance Checklist</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {activeSemester ? activeSemester.label : "No active semester"}
-          </p>
+      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              Professor workspace
+            </span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">My Clearance Checklist</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                {activeSemester ? activeSemester.label : "No active semester"}
+              </p>
+              <p className="mt-2 max-w-2xl text-sm text-gray-500">
+                Work through each section below, upload the requested file, and watch the status badge for review updates.
+              </p>
+            </div>
+          </div>
+          <NotificationBell userId={professorId} unreadCount={unreadCount} />
         </div>
-        <NotificationBell userId={professorId} unreadCount={unreadCount} />
       </div>
 
-      {/* Progress bar */}
       {total > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-[24px] border border-gray-200 p-5 shadow-sm shadow-gray-100/60">
           <div className="flex justify-between text-sm mb-2">
             <span className="font-medium text-gray-700">Overall Progress</span>
             <span className="text-gray-500">
