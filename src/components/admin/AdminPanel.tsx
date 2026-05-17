@@ -502,7 +502,7 @@ export default function AdminPanel({
             </div>
 
             {treeSemId && (
-              <RequirementTreeEditor semesterId={treeSemId} departments={departments} />
+              <RequirementTreeEditor semesterId={treeSemId} />
             )}
           </div>
         )}
