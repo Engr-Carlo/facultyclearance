@@ -226,34 +226,37 @@ export default function AdminPanel({
 
 
 
-  const TABS: { key: Tab; label: string }[] = [
-    { key: "users", label: "Users" },
-    { key: "departments", label: "Departments" },
-    { key: "semesters", label: "Semesters" },
-    { key: "requirements", label: "Requirements" },
-    { key: "drive", label: "Drive Files" },
-    { key: "audit", label: "Audit Logs" },
+  const TABS: { key: Tab; label: string; icon: string }[] = [
+    { key: "users",        label: "Users",        icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+    { key: "departments",  label: "Departments",  icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    { key: "semesters",    label: "Semesters",    icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { key: "requirements", label: "Requirements", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
+    { key: "drive",        label: "Drive Files",  icon: "M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" },
+    { key: "audit",        label: "Audit Logs",   icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => {
-              setTab(t.key);
-            }}
-            className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-              tab === t.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto pb-1">
+        <div className="flex gap-1 bg-gray-100/80 p-1 rounded-2xl min-w-max">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-medium transition-all whitespace-nowrap ${
+                tab === t.key
+                  ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+              }`}
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={t.icon} />
+              </svg>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Users tab */}

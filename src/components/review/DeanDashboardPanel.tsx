@@ -147,193 +147,257 @@ export default function DeanDashboardPanel({
   const pendingDean = allProfs.filter((p) => p.allChairApproved && !p.allCleared).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total professors" value={totalProfs} />
-        <StatCard label="Fully cleared" value={fullyCleared} color="green" />
-        <StatCard label="Awaiting sign-off" value={pendingDean} color="blue" highlight />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="Total Faculty" value={totalProfs} icon="users" />
+        <StatCard label="Awaiting Dean Sign-off" value={pendingDean} icon="clock" color="blue" />
+        <StatCard label="Fully Cleared" value={fullyCleared} icon="check" color="green" />
       </div>
 
-      {/* Export */}
+      {/* Toolbar */}
       <div className="flex justify-end">
         <button
           onClick={exportCsv}
-          className="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
         >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
           Export CSV
         </button>
       </div>
 
-      {/* Department cards */}
+      {/* ── Department overview ── */}
       {!selectedDept && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {deptSummaries.map((d) => (
-            <button
-              key={d.id}
-              onClick={() => setSelectedDept(d.id)}
-              className="text-left bg-white border border-gray-200 rounded-xl p-4 hover:border-teal-400 hover:shadow-sm transition-all"
-            >
-              <div className="font-semibold text-gray-900 mb-1">{d.name}</div>
-              <div className="text-xs text-gray-400 mb-3">
-                {d.professors.length} professor{d.professors.length !== 1 ? "s" : ""}
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 rounded-full transition-all"
-                  style={{ width: `${d.completionPct}%` }}
-                />
-              </div>
-              <div className="text-xs text-gray-500 mt-1">{d.completionPct}% cleared</div>
-            </button>
-          ))}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Departments</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {deptSummaries.map((d) => {
+              const deptFullyCleared = d.professors.filter((p) => p.allCleared).length;
+              const deptPending = d.professors.filter((p) => p.allChairApproved && !p.allCleared).length;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedDept(d.id)}
+                  className="text-left bg-white border border-gray-200 rounded-2xl p-5 hover:border-teal-400 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-100 transition-colors">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 group-hover:text-teal-700 transition-colors">{d.name}</div>
+                      <div className="text-xs text-gray-400">{d.professors.length} professor{d.professors.length !== 1 ? "s" : ""}</div>
+                    </div>
+                    <svg className="w-4 h-4 text-gray-300 group-hover:text-teal-500 transition-colors mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+                    <div
+                      className="h-full bg-teal-500 rounded-full transition-all"
+                      style={{ width: `${d.completionPct}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{d.completionPct}% cleared</span>
+                    <div className="flex gap-3">
+                      {deptPending > 0 && (
+                        <span className="text-blue-600 font-medium">{deptPending} pending sign-off</span>
+                      )}
+                      {deptFullyCleared > 0 && (
+                        <span className="text-emerald-600 font-medium">{deptFullyCleared} cleared</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Prof list within dept */}
+      {/* ── Professor list within dept ── */}
       {selectedDept && !selectedProf && dept && (
-        <div className="space-y-3">
-          <button
-            onClick={() => setSelectedDept(null)}
-            className="text-xs text-teal-600 hover:underline"
-          >
-            ← Back to departments
-          </button>
-          <h2 className="font-semibold text-gray-800">{dept.name}</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="space-y-4">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm">
+            <button onClick={() => setSelectedDept(null)} className="text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              All Departments
+            </button>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-700 font-semibold">{dept.name}</span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-semibold text-gray-800">{dept.name}</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{dept.professors.length} faculty member{dept.professors.length !== 1 ? "s" : ""}</p>
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide border-b border-gray-100">
-                  <th className="text-left px-4 py-3 font-medium">Professor</th>
-                  <th className="text-left px-4 py-3 font-medium">Progress</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="text-left px-5 py-3 font-semibold">Professor</th>
+                  <th className="text-left px-5 py-3 font-semibold">Progress</th>
+                  <th className="text-left px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {dept.professors.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{p.name}</div>
-                      <div className="text-xs text-gray-400">{p.email}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-teal-500 rounded-full"
-                            style={{
-                              width: `${p.total > 0 ? Math.round((p.cleared / p.total) * 100) : 0}%`,
-                            }}
-                          />
+                {dept.professors.map((p) => {
+                  const pct = p.total > 0 ? Math.round((p.cleared / p.total) * 100) : 0;
+                  const initials = (p.name ?? "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {initials}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{p.name}</div>
+                            <div className="text-xs text-gray-400">{p.email}</div>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {p.cleared}/{p.total}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.allCleared ? (
-                        <span className="text-xs font-medium text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">
-                          Fully cleared
-                        </span>
-                      ) : p.allChairApproved ? (
-                        <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                          Awaiting sign-off
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">In progress</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      {p.allChairApproved && !p.allCleared && (
-                        <button
-                          onClick={() => signOff(p.id)}
-                          disabled={submitting === p.id}
-                          className="text-xs bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
-                        >
-                          Sign off
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSelectedProf(p.id);
-                        }}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-teal-500 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-xs text-gray-500 tabular-nums">{p.cleared}/{p.total}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {p.allCleared ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                            Fully cleared
+                          </span>
+                        ) : p.allChairApproved ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                            Awaiting sign-off
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">In progress</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {p.allChairApproved && !p.allCleared && (
+                            <button
+                              onClick={() => signOff(p.id)}
+                              disabled={submitting === p.id}
+                              className="text-xs font-semibold bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                            >
+                              Sign off
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setSelectedProf(p.id)}
+                            className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Item-level drill down */}
+      {/* ── Item-level drill-down ── */}
       {selectedProf && prof && dept && (
-        <div className="space-y-3">
-          <button
-            onClick={() => setSelectedProf(null)}
-            className="text-xs text-teal-600 hover:underline"
-          >
-            ← Back to {dept.name}
-          </button>
-          <h2 className="font-semibold text-gray-800">
-            {prof.name} — {dept.name}
-          </h2>
-          <div className="space-y-2">
-            {prof.items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white border border-gray-100 rounded-lg p-3 flex flex-wrap items-start gap-3"
-              >
-                <div className="flex-1 min-w-[180px]">
-                  <div className="text-sm font-medium text-gray-900">
-                    {item.subjectCode} — {item.docType}
+        <div className="space-y-4">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm flex-wrap">
+            <button onClick={() => setSelectedDept(null)} className="text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              All Departments
+            </button>
+            <span className="text-gray-300">/</span>
+            <button onClick={() => setSelectedProf(null)} className="text-teal-600 hover:text-teal-800 font-medium">
+              {dept.name}
+            </button>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-700 font-semibold">{prof.name}</span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-semibold text-gray-800">{prof.name}</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{prof.email} · {dept.name}</p>
+            </div>
+            <div className="p-4 space-y-2">
+              {prof.items.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-wrap items-start gap-3"
+                >
+                  <div className="flex-1 min-w-[180px]">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {item.subjectCode}
+                      <span className="font-normal text-gray-300 mx-1.5">·</span>
+                      <span className="font-normal text-gray-700">{item.docType}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs capitalize text-gray-500 bg-white border border-gray-200 px-1.5 py-0.5 rounded-md">{item.term}</span>
+                      <span className="text-xs text-gray-400">{item.subjectName}</span>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400 capitalize">
-                    {item.term} · {item.subjectName}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge status={item.status} />
+                    {item.driveFileId && (
+                      <a
+                        href={`https://drive.google.com/file/d/${item.driveFileId}/view`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open file
+                      </a>
+                    )}
                   </div>
-                </div>
-                <StatusBadge status={item.status} />
-                {item.driveFileId && (
-                  <a
-                    href={`https://drive.google.com/file/d/${item.driveFileId}/view`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    Open file
-                  </a>
-                )}
-                {item.status !== "dean_cleared" && item.status !== "not_submitted" && (
-                  <>
-                    {overrideItem === item.id ? (
+
+                  {item.status !== "dean_cleared" && item.status !== "not_submitted" && (
+                    overrideItem === item.id ? (
                       <div className="w-full flex flex-col gap-2">
                         <textarea
                           placeholder="Override reason (required)"
                           value={overrideComment}
                           onChange={(e) => setOverrideComment(e.target.value)}
                           rows={2}
-                          className="text-xs border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 w-full"
+                          className="text-xs border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 w-full bg-white"
                         />
                         <div className="flex gap-2">
                           <button
                             onClick={() => submitOverride(item.id)}
                             disabled={submitting === item.id}
-                            className="text-xs bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                            className="text-xs font-semibold bg-purple-600 text-white px-4 py-1.5 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
                           >
                             Confirm Override
                           </button>
                           <button
-                            onClick={() => {
-                              setOverrideItem(null);
-                              setOverrideComment("");
-                            }}
-                            className="text-xs text-gray-500 hover:underline"
+                            onClick={() => { setOverrideItem(null); setOverrideComment(""); }}
+                            className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg transition-colors"
                           >
                             Cancel
                           </button>
@@ -342,15 +406,15 @@ export default function DeanDashboardPanel({
                     ) : (
                       <button
                         onClick={() => setOverrideItem(item.id)}
-                        className="text-xs text-purple-600 hover:underline"
+                        className="text-xs text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-full transition-colors"
                       >
                         Override
                       </button>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -361,30 +425,46 @@ export default function DeanDashboardPanel({
 function StatCard({
   label,
   value,
+  icon,
   color,
 }: {
   label: string;
   value: number;
-  color?: "green" | "blue";
-  highlight?: boolean;
+  icon: "users" | "clock" | "check";
+  color?: "blue" | "green";
 }) {
-  const bg =
-    color === "green"
-      ? "bg-teal-50 border-teal-200"
-      : color === "blue"
-      ? "bg-blue-50 border-blue-200"
-      : "bg-white border-gray-200";
-  const text =
-    color === "green"
-      ? "text-teal-700"
-      : color === "blue"
-      ? "text-blue-700"
-      : "text-gray-900";
+  const bg     = color === "blue"  ? "bg-blue-50 border-blue-100"     : color === "green" ? "bg-emerald-50 border-emerald-100"   : "bg-white border-gray-200";
+  const numCls = color === "blue"  ? "text-blue-700"                  : color === "green" ? "text-emerald-700"                   : "text-gray-900";
+  const iconBg = color === "blue"  ? "bg-blue-100 text-blue-600"      : color === "green" ? "bg-emerald-100 text-emerald-600"    : "bg-gray-100 text-gray-500";
+
+  const icons = {
+    users: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    clock: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    check: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  };
 
   return (
-    <div className={`rounded-xl border p-4 ${bg}`}>
-      <div className={`text-2xl font-bold ${text}`}>{value}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+    <div className={`rounded-2xl border p-5 flex items-center gap-4 ${bg}`}>
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        {icons[icon]}
+      </div>
+      <div>
+        <div className={`text-3xl font-bold leading-none ${numCls}`}>{value}</div>
+        <div className="text-xs text-gray-500 mt-1 leading-tight">{label}</div>
+      </div>
     </div>
   );
 }
+
