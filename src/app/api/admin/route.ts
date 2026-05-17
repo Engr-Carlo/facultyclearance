@@ -387,6 +387,17 @@ export async function DELETE(req: NextRequest) {
   const entity = searchParams.get("entity");
   const id = searchParams.get("id");
 
+  // Bulk-delete all tree nodes for a semester (no node id required)
+  if (entity === "tree-all") {
+    const semesterId = searchParams.get("semesterId");
+    if (!semesterId)
+      return NextResponse.json({ error: "semesterId required" }, { status: 400 });
+    await db
+      .delete(requirementTreeNodes)
+      .where(eq(requirementTreeNodes.semesterId, semesterId));
+    return NextResponse.json({ success: true });
+  }
+
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   if (entity === "tree-node") {

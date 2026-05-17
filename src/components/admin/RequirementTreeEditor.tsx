@@ -429,6 +429,21 @@ export default function RequirementTreeEditor({ semesterId }: { semesterId: stri
     }
   }
 
+  async function handleClearAll() {
+    if (!confirm("Delete ALL nodes in this tree? This cannot be undone.")) return;
+    try {
+      const res = await fetch(
+        `/api/admin?entity=tree-all&semesterId=${semesterId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error((await res.json()).error ?? "Clear failed");
+      setFlat([]);
+      setExpanded(new Set());
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Clear failed");
+    }
+  }
+
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -479,6 +494,14 @@ export default function RequirementTreeEditor({ semesterId }: { semesterId: stri
           >
             + Add Root Upload Slot
           </button>
+          {flat.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="text-xs bg-white border border-red-300 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:border-red-400 transition-colors"
+            >
+              Clear All
+            </button>
+          )}
         </div>
       </div>
 

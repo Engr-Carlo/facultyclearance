@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import {
   clearanceItems,
   notifications,
-  professorRequirements,
   users,
 } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -29,26 +28,6 @@ export async function POST(req: NextRequest) {
   }
 
   const professorId = session.user.id;
-
-  // Verify professor is assigned this requirement
-  const assignment = await db
-    .select()
-    .from(professorRequirements)
-    .where(
-      and(
-        eq(professorRequirements.professorId, professorId),
-        eq(professorRequirements.requirementId, requirementId),
-        eq(professorRequirements.semesterId, semesterId)
-      )
-    )
-    .then((r) => r[0]);
-
-  if (!assignment) {
-    return NextResponse.json(
-      { error: "Requirement not assigned to you" },
-      { status: 403 }
-    );
-  }
 
   // Upsert clearance item
   const existing = await db
