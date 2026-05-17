@@ -9,7 +9,7 @@ import {
   reviews,
   notifications,
 } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray, isNull } from "drizzle-orm";
 import ClearanceTreeChecklist from "@/components/checklist/ClearanceTreeChecklist";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ensureProfessorFoldersFromTree } from "@/lib/drive/client";
@@ -85,12 +85,7 @@ export default async function ProfessorDashboard() {
             reviewedAt: reviews.reviewedAt,
           })
           .from(reviews)
-          .where(
-            itemIds.reduce(
-              (acc, _id) => acc,
-              eq(reviews.clearanceItemId, itemIds[0])
-            )
-          )
+          .where(inArray(reviews.clearanceItemId, itemIds))
           .orderBy(desc(reviews.reviewedAt))
       : [];
 
@@ -107,7 +102,7 @@ export default async function ProfessorDashboard() {
     .select({ id: notifications.id })
     .from(notifications)
     .where(
-      and(eq(notifications.userId, professorId), eq(notifications.readAt, null as any))
+      and(eq(notifications.userId, professorId), isNull(notifications.readAt))
     )
     .then((r) => r.length);
 

@@ -106,31 +106,96 @@ function SortableRow({
   return (
     <div ref={setNodeRef} style={style} className="select-none">
       <div
-        className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-50 group ${
-          isLeaf ? "border-l-2 border-green-400 ml-1" : ""
+        className={`flex items-center gap-1.5 rounded-lg group transition-colors ${
+          isLeaf
+            ? "hover:bg-gray-50"
+            : depth === 0
+            ? "bg-slate-50 hover:bg-slate-100 border-l-4 border-slate-300 rounded-l-none mt-0.5"
+            : "hover:bg-gray-50 border-l-2 border-gray-200 rounded-l-none"
         }`}
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={{
+          paddingLeft: `${depth * 20 + 8}px`,
+          paddingRight: "8px",
+          paddingTop: isLeaf ? "5px" : depth === 0 ? "8px" : "6px",
+          paddingBottom: isLeaf ? "5px" : depth === 0 ? "8px" : "6px",
+        }}
       >
         {/* Drag handle */}
         <span
           {...attributes}
           {...listeners}
-          className="cursor-grab text-gray-300 hover:text-gray-500 text-xs pr-1"
+          className="cursor-grab text-gray-300 hover:text-gray-500 shrink-0 flex items-center"
           title="Drag to reorder"
         >
-          ⠿
+          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="5" cy="4" r="1.2" />
+            <circle cx="5" cy="8" r="1.2" />
+            <circle cx="5" cy="12" r="1.2" />
+            <circle cx="11" cy="4" r="1.2" />
+            <circle cx="11" cy="8" r="1.2" />
+            <circle cx="11" cy="12" r="1.2" />
+          </svg>
         </span>
 
-        {/* Expand/collapse toggle (folders only) */}
+        {/* Expand/collapse (folders) or dot indicator (leaves) */}
         {!isLeaf ? (
           <button
             onClick={() => onToggle(node.id)}
-            className="w-4 text-gray-400 hover:text-gray-600 text-xs"
+            className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0"
           >
-            {expanded.has(node.id) ? "▾" : "▸"}
+            <svg
+              className={`w-3 h-3 transition-transform duration-150 ${
+                expanded.has(node.id) ? "rotate-90" : ""
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         ) : (
-          <span className="w-4 text-green-500 text-xs">📄</span>
+          <span className="w-4 h-4 flex items-center justify-center shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </span>
+        )}
+
+        {/* Folder / document icon */}
+        {!isLeaf ? (
+          <svg
+            className={`shrink-0 ${depth === 0 ? "w-4 h-4 text-slate-500" : "w-3.5 h-3.5 text-gray-400"}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            {expanded.has(node.id) ? (
+              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+            ) : (
+              <path
+                fillRule="evenodd"
+                d="M2 6a2 2 0 012-2h4.586A2 2 0 0110 4.586L11.414 6H16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                clipRule="evenodd"
+              />
+            )}
+          </svg>
+        ) : (
+          <svg
+            className="w-3.5 h-3.5 text-gray-300 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
         )}
 
         {/* Name (editable inline) */}
@@ -144,25 +209,36 @@ function SortableRow({
               if (e.key === "Enter") onSave(node.id, editVal);
               if (e.key === "Escape") onCancelEdit();
             }}
-            className="border border-blue-400 rounded px-1 text-sm flex-1 min-w-0"
+            className="border border-blue-400 rounded-md px-2 py-0.5 text-sm flex-1 min-w-0 outline-none"
           />
         ) : (
           <span
-            className="flex-1 text-sm text-gray-800 cursor-pointer truncate"
-            onDoubleClick={() => { onEdit(node.id); setEditVal(node.name); }}
+            className={`flex-1 text-sm cursor-pointer truncate ${
+              isLeaf
+                ? "text-gray-700"
+                : depth === 0
+                ? "text-gray-800 font-semibold"
+                : "text-gray-800 font-medium"
+            }`}
+            onDoubleClick={() => {
+              onEdit(node.id);
+              setEditVal(node.name);
+            }}
             title="Double-click to rename"
           >
             {node.name}
           </span>
         )}
 
-        {/* TypeTag badge */}
+        {/* TypeTag select */}
         {!isEditing && (
           <select
             value={node.typeTag ?? ""}
-            onChange={(e) => onTagChange(node.id, (e.target.value as TypeTag) || null)}
-            className={`text-xs rounded px-1 py-0.5 border-0 outline-none cursor-pointer ${
-              node.typeTag ? TAG_COLORS[node.typeTag] : "bg-gray-50 text-gray-400"
+            onChange={(e) =>
+              onTagChange(node.id, (e.target.value as TypeTag) || null)
+            }
+            className={`text-xs rounded-full px-2 py-0.5 border-0 outline-none cursor-pointer font-medium shrink-0 ${
+              node.typeTag ? TAG_COLORS[node.typeTag] : "bg-gray-100 text-gray-400"
             }`}
           >
             <option value="">— tag —</option>
@@ -173,46 +249,46 @@ function SortableRow({
           </select>
         )}
 
-        {/* Lab toggle (leaf only) */}
+        {/* Lab toggle (leaves only) */}
         {isLeaf && !isEditing && (
-          <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
+          <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer shrink-0">
             <input
               type="checkbox"
               checked={node.hasLabComponent}
               onChange={(e) => onLabToggle(node.id, e.target.checked)}
-              className="accent-blue-600"
+              className="accent-emerald-600"
             />
             Lab
           </label>
         )}
 
-        {/* Action buttons (visible on hover) */}
+        {/* Hover action buttons */}
         {!isEditing && (
-          <span className="hidden group-hover:flex items-center gap-1 ml-1">
+          <span className="hidden group-hover:flex items-center gap-0.5 ml-1 shrink-0">
             {!isLeaf && (
               <>
                 <button
                   onClick={() => onAdd(node.id, "folder")}
-                  className="text-xs text-gray-400 hover:text-blue-600 px-1"
+                  className="text-xs text-gray-400 hover:text-blue-600 hover:bg-blue-50 px-1.5 py-0.5 rounded transition-colors"
                   title="Add sub-folder"
                 >
-                  +📁
+                  + Folder
                 </button>
                 <button
                   onClick={() => onAdd(node.id, "leaf")}
-                  className="text-xs text-gray-400 hover:text-green-600 px-1"
+                  className="text-xs text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 px-1.5 py-0.5 rounded transition-colors"
                   title="Add upload slot"
                 >
-                  +📄
+                  + Item
                 </button>
               </>
             )}
             <button
               onClick={() => onDelete(node.id)}
-              className="text-xs text-gray-300 hover:text-red-500 px-1"
+              className="text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 px-1.5 py-0.5 rounded transition-colors"
               title="Delete"
             >
-              🗑
+              Remove
             </button>
           </span>
         )}
