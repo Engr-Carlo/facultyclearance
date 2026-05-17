@@ -38,7 +38,18 @@ type AuditLog = {
   createdAt: string;
 };
 
-type Tab = "users" | "departments" | "semesters" | "requirements" | "audit";
+type Tab = "users" | "departments" | "semesters" | "requirements" | "audit" | "drive";
+
+type DriveFile = {
+  id: string;
+  professorId: string;
+  professorName: string | null;
+  professorEmail: string;
+  driveFileId: string;
+  driveFileName: string | null;
+  status: string;
+  submittedAt: string | null;
+};
 
 export default function AdminPanel({
   users,
@@ -70,6 +81,11 @@ export default function AdminPanel({
 
   // Tree editor semester selection
   const [treeSemId, setTreeSemId] = useState<string>("");
+
+  // Drive files
+  const [driveFilterSemId, setDriveFilterSemId] = useState("");
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [driveFilesLoading, setDriveFilesLoading] = useState(false);
 
   async function post(entity: string, body: Record<string, unknown>) {
     setLoading(true);
@@ -166,6 +182,33 @@ export default function AdminPanel({
     }
   }
 
+  async function fetchDriveFiles(semesterId: string) {
+    setDriveFilesLoading(true);
+    try {
+      const res = await fetch(`/api/admin?entity=drive-files&semesterId=${semesterId}`);
+      if (!res.ok) throw new Error("Failed to load");
+      setDriveFiles(await res.json());
+    } catch {
+      setDriveFiles([]);
+    } finally {
+      setDriveFilesLoading(false);
+    }
+  }
+
+  async function handleDeleteDriveFile(id: string) {
+    if (!confirm("Delete this file from Google Drive and clear the submission? This cannot be undone.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin?entity=drive-file&id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Delete failed");
+      setDriveFiles((prev) => prev.filter((f) => f.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function runTreeMigration() {
     try {
       const res = await fetch("/api/admin?entity=migrate-tree", {
@@ -188,6 +231,7 @@ export default function AdminPanel({
     { key: "departments", label: "Departments" },
     { key: "semesters", label: "Semesters" },
     { key: "requirements", label: "Requirements" },
+    { key: "drive", label: "Drive Files" },
     { key: "audit", label: "Audit Logs" },
   ];
 
@@ -503,6 +547,100 @@ export default function AdminPanel({
             <p className="text-sm text-gray-400 text-center py-8">
               Pick a semester above to view or edit its requirement tree.
             </p>
+          )}
+        </div>
+      )}
+
+      {/* Drive Files tab */}
+      {tab === "drive" && (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-3 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-500">Semester</label>
+              <select
+                value={driveFilterSemId}
+                onChange={(e) => {
+                  setDriveFilterSemId(e.target.value);
+                  if (e.target.value) fetchDriveFiles(e.target.value);
+                  else setDriveFiles([]);
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 min-w-[240px]"
+              >
+                <option value="">Choose a semester…</option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}{s.isActive ? " (Active)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {driveFilterSemId && (
+              <button
+                onClick={() => fetchDriveFiles(driveFilterSemId)}
+                disabled={driveFilesLoading}
+                className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              >
+                Refresh
+              </button>
+            )}
+          </div>
+
+          {driveFilesLoading && (
+            <p className="text-sm text-gray-400 text-center py-8">Loading…</p>
+          )}
+
+          {!driveFilesLoading && driveFilterSemId && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
+                    <th className="text-left px-4 py-3 font-medium">Professor</th>
+                    <th className="text-left px-4 py-3 font-medium">File</th>
+                    <th className="text-left px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {driveFiles.map((f) => (
+                    <tr key={f.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{f.professorName ?? "—"}</div>
+                        <div className="text-xs text-gray-400">{f.professorEmail}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={`https://drive.google.com/file/d/${f.driveFileId}/view`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          {f.driveFileName ?? f.driveFileId}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-gray-500">{f.status.replace(/_/g, " ")}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleDeleteDriveFile(f.id)}
+                          disabled={loading}
+                          className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {driveFiles.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-400 text-xs">
+                        No files uploaded for this semester
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

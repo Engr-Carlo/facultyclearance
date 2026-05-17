@@ -13,8 +13,8 @@ import {
   clearanceItems,
   auditLogs,
 } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
-import { provisionSemesterFolders } from "@/lib/drive/client";
+import { eq, and, asc, isNotNull } from "drizzle-orm";
+import { provisionSemesterFolders, getDriveClient } from "@/lib/drive/client";
 import { writeAuditLog } from "@/lib/audit";
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -80,6 +80,33 @@ export async function GET(req: NextRequest) {
       .from(auditLogs)
       .orderBy(auditLogs.createdAt)
       .limit(200);
+    return NextResponse.json(rows);
+  }
+
+  if (entity === "drive-files") {
+    const semesterId = searchParams.get("semesterId");
+    if (!semesterId)
+      return NextResponse.json({ error: "semesterId required" }, { status: 400 });
+    const rows = await db
+      .select({
+        id: clearanceItems.id,
+        professorId: clearanceItems.professorId,
+        professorName: users.name,
+        professorEmail: users.email,
+        driveFileId: clearanceItems.driveFileId,
+        driveFileName: clearanceItems.driveFileName,
+        status: clearanceItems.status,
+        submittedAt: clearanceItems.submittedAt,
+      })
+      .from(clearanceItems)
+      .innerJoin(users, eq(clearanceItems.professorId, users.id))
+      .where(
+        and(
+          eq(clearanceItems.semesterId, semesterId),
+          isNotNull(clearanceItems.driveFileId)
+        )
+      )
+      .orderBy(users.name);
     return NextResponse.json(rows);
   }
 
@@ -405,6 +432,31 @@ export async function DELETE(req: NextRequest) {
       .delete(requirementTreeNodes)
       .where(eq(requirementTreeNodes.id, id));
     // Cascade deletes children via DB FK; linked requirements also auto-deleted via cascade
+    return NextResponse.json({ success: true });
+  }
+
+  if (entity === "drive-file") {
+    const item = await db
+      .select()
+      .from(clearanceItems)
+      .where(eq(clearanceItems.id, id))
+      .then((r) => r[0]);
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Delete from Google Drive — ignore errors (file may already be gone)
+    if (item.driveFileId) {
+      try {
+        const drive = getDriveClient();
+        await drive.files.delete({ fileId: item.driveFileId });
+      } catch {
+        // continue with DB cleanup regardless
+      }
+    }
+
+    await db.delete(clearanceItems).where(eq(clearanceItems.id, id));
+    await writeAuditLog(session.user.id, "delete_drive_file", "clearance_items", id, {
+      driveFileId: item.driveFileId,
+    });
     return NextResponse.json({ success: true });
   }
 
