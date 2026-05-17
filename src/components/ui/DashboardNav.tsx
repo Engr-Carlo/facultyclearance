@@ -18,59 +18,46 @@ export default function DashboardNav({ session }: { session: Session }) {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-teal-600 rounded-md flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div className="leading-tight">
-            <div className="text-sm font-bold text-gray-900 tracking-tight">Faculty Clearance</div>
-            <div className="text-xs text-gray-400">University of Cabuyao</div>
-          </div>
+          <span className="text-sm font-semibold text-gray-900 tracking-tight">Faculty Clearance</span>
+          <span className="hidden sm:block text-gray-300">·</span>
+          <span className="hidden sm:block text-sm text-gray-500">University of Cabuyao</span>
         </div>
 
-        {/* Right section */}
+        {/* Right */}
         <div className="flex items-center gap-3">
-          {/* Role badge */}
-          <span className={`hidden sm:inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.badge}`}>
-            {cfg.label}
-          </span>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px h-5 bg-gray-200" />
-
-          {/* User */}
+          <span className="hidden sm:block text-xs text-gray-400">{cfg.label}</span>
+          <div className="w-px h-4 bg-gray-200 hidden sm:block" />
           <div className="flex items-center gap-2">
             {session.user.image ? (
               <Image
                 src={session.user.image}
-                alt={session.user.name ?? "User"}
-                width={34}
-                height={34}
-                className="rounded-full ring-2 ring-gray-100"
+                alt={session.user.name ?? ""}
+                width={28}
+                height={28}
+                className="rounded-full"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">
+              <div className="w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs font-semibold">
                 {initials}
               </div>
             )}
-            <span className="text-sm font-medium text-gray-800 hidden md:block max-w-[160px] truncate">
+            <span className="text-sm text-gray-700 hidden md:block max-w-[160px] truncate">
               {session.user.name}
             </span>
           </div>
-
-          {/* Sign out */}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors"
+            className="inline-flex items-center h-7 px-2.5 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="hidden sm:inline">Sign out</span>
+            Sign out
           </button>
         </div>
       </div>

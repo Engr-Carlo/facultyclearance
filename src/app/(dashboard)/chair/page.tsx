@@ -94,22 +94,14 @@ export default async function ChairDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 space-y-4">
-        <div>
-          <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-            Chair workspace
-          </span>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">Department Review</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {dept?.name} — {activeSemester?.label ?? "No active semester"}
-          </p>
-          <p className="mt-2 max-w-2xl text-sm text-gray-500">
-            Open a faculty card, preview the submitted file, and use one clear action: approve, return, or reject.
-          </p>
-        </div>
-
-        {activeSemester && <DeadlineBanner deadline={activeSemester.deadline} />}
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">
+          {dept?.name} · {activeSemester?.label ?? "No active semester"}
+        </p>
+        <h1 className="mt-0.5 text-xl font-semibold text-gray-900">Department Review</h1>
       </div>
+
+      {activeSemester && <DeadlineBanner deadline={activeSemester.deadline} />}
 
       <ChairReviewPanel
         professors={professorMap}

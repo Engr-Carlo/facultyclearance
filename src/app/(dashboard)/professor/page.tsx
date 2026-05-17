@@ -113,52 +113,38 @@ export default async function ProfessorDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-              Professor workspace
-            </span>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Clearance Checklist</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {activeSemester ? activeSemester.label : "No active semester"}
-              </p>
-              <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                Work through each section below, upload the requested file, and watch the status badge for review updates.
-              </p>
-            </div>
-          </div>
-          <NotificationBell userId={professorId} unreadCount={unreadCount} />
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">
+            {activeSemester?.label ?? "No active semester"}
+          </p>
+          <h1 className="mt-0.5 text-xl font-semibold text-gray-900">Clearance Checklist</h1>
         </div>
+        <NotificationBell userId={professorId} unreadCount={unreadCount} />
       </div>
 
       {total > 0 && (
-        <div className="bg-white rounded-[24px] border border-gray-200 p-5 shadow-sm shadow-gray-100/60">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-gray-700">Overall Progress</span>
-            <span className="text-gray-500">
-              {cleared} / {total} fully cleared
-            </span>
+        <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <span>Progress</span>
+              <span className="font-medium text-gray-700 tabular-nums">{cleared}/{total} cleared</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all"
+                style={{ width: `${total > 0 ? (cleared / total) * 100 : 0}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
-              style={{ width: `${total > 0 ? (cleared / total) * 100 : 0}%` }}
-            />
-          </div>
-          <div className="flex gap-4 mt-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              {cleared} Dean-cleared
+          <div className="flex items-center gap-4 text-xs text-gray-500 shrink-0 hidden sm:flex">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              {cleared} dean-cleared
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-              {chairApproved} Chair-approved
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
-              {total - cleared - chairApproved} Remaining
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-teal-400" />
+              {chairApproved} chair-approved
             </span>
           </div>
         </div>

@@ -60,19 +60,11 @@ export default async function AdminDashboard() {
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70">
-          <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-            Admin workspace
-          </span>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">
-            System Management
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            University of Cabuyao — Admin Panel
+        <div>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">
+            System Management · University of Cabuyao
           </p>
-          <p className="mt-2 max-w-2xl text-sm text-gray-500">
-            Use the workspace below to manage one administrative task at a time instead of scanning one oversized control panel.
-          </p>
+          <h1 className="mt-0.5 text-xl font-semibold text-gray-900">Admin Panel</h1>
         </div>
 
         <AdminPanel

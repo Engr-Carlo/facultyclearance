@@ -12,9 +12,9 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f0fdfa,_#f8fafc_38%,_#f8fafc_100%)] flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <DashboardNav session={session} />
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-7xl lg:py-8">
+      <main className="flex-1 mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

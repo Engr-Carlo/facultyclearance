@@ -37,7 +37,7 @@ export default function DeadlineBanner({
 
   return (
     <div
-      className={`rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-3 shadow-sm ${
+      className={`rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-3 ${
         isUrgent
           ? "bg-red-50 border border-red-200 text-red-700"
           : "bg-amber-50 border border-amber-200 text-amber-700"

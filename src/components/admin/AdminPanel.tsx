@@ -51,6 +51,28 @@ type DriveFile = {
   submittedAt: string | null;
 };
 
+const inputCls =
+  "h-8 px-3 text-sm border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-full";
+const btnPrimary =
+  "inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 transition-colors whitespace-nowrap";
+const btnSecondary =
+  "inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors whitespace-nowrap";
+const btnDanger =
+  "inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border border-red-200 text-red-600 bg-white hover:bg-red-50 disabled:opacity-40 transition-colors whitespace-nowrap";
+const btnDark =
+  "inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-40 transition-colors whitespace-nowrap";
+const selCls =
+  "h-8 px-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "users", label: "Users" },
+  { key: "departments", label: "Departments" },
+  { key: "semesters", label: "Semesters" },
+  { key: "requirements", label: "Requirements" },
+  { key: "drive", label: "Drive Files" },
+  { key: "audit", label: "Audit Logs" },
+];
+
 export default function AdminPanel({
   users,
   departments,
@@ -94,12 +116,9 @@ export default function AdminPanel({
     if (!confirm("Delete this item?")) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin?entity=${entity}&id=${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/admin?entity=${entity}&id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.error ?? "Delete failed");
+        alert((await res.json()).error ?? "Delete failed");
         return;
       }
       window.location.reload();
@@ -112,11 +131,7 @@ export default function AdminPanel({
     const form = roleForm[userId];
     if (!form) return;
     try {
-      await post("user-role", {
-        userId,
-        role: form.role,
-        departmentId: form.departmentId || null,
-      });
+      await post("user-role", { userId, role: form.role, departmentId: form.departmentId || null });
       window.location.reload();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Error");
@@ -138,10 +153,7 @@ export default function AdminPanel({
   async function createSemester(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await post("semester", {
-        label: semName,
-        deadline: semDeadline || null,
-      });
+      await post("semester", { label: semName, deadline: semDeadline || null });
       setSemName("");
       setSemDeadline("");
       window.location.reload();
@@ -187,7 +199,7 @@ export default function AdminPanel({
     try {
       const res = await fetch(`/api/admin?entity=drive-file&id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error((await res.json()).error ?? "Delete failed");
-      setDriveFiles((prev) => prev.filter((file) => file.id !== id));
+      setDriveFiles((prev) => prev.filter((f) => f.id !== id));
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Delete failed");
     } finally {
@@ -210,467 +222,415 @@ export default function AdminPanel({
     }
   }
 
-  const tabs: { key: Tab; label: string; icon: string; hint: string }[] = [
-    { key: "users", label: "Users", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", hint: "Assign roles and departments" },
-    { key: "departments", label: "Departments", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", hint: "Manage colleges and offices" },
-    { key: "semesters", label: "Semesters", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z", hint: "Create active clearance windows" },
-    { key: "requirements", label: "Requirements", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4", hint: "Edit the submission tree" },
-    { key: "drive", label: "Drive Files", icon: "M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z", hint: "Review uploaded files" },
-    { key: "audit", label: "Audit Logs", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", hint: "Track administrative activity" },
-  ];
-
-  const activeTab = tabs.find((entry) => entry.key === tab) ?? tabs[0];
-  const activeSemesterCount = semesters.filter((semester) => semester.isActive).length;
   const pendingFilesCount = useMemo(
-    () => driveFiles.filter((file) => file.status === "submitted" || file.status === "chair_approved").length,
+    () => driveFiles.filter((f) => f.status === "submitted" || f.status === "chair_approved").length,
     [driveFiles]
   );
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <span className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-              Admin workspace
-            </span>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Manage users, semesters, requirements, and submissions from one place</h2>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">Pick a tab below. Each workspace focuses on one task so you do not have to scan a giant table before taking action.</p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-            <MetricCard label="Users" value={`${users.length}`} tone="slate" />
-            <MetricCard label="Departments" value={`${departments.length}`} tone="blue" />
-            <MetricCard label="Active semesters" value={`${activeSemesterCount}`} tone="emerald" />
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto pb-1">
-        <div className="flex min-w-max gap-2 rounded-3xl bg-gray-100/90 p-1.5">
-          {tabs.map((entry) => (
+    <div className="space-y-0">
+      {/* GitHub-style tab bar */}
+      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+        <nav className="-mb-px flex gap-0 px-2 overflow-x-auto">
+          {TABS.map((t) => (
             <button
-              key={entry.key}
-              onClick={() => setTab(entry.key)}
-              className={`rounded-2xl px-4 py-3 text-left transition-all ${tab === entry.key ? "bg-white shadow-sm ring-1 ring-gray-200" : "text-gray-500 hover:bg-white/60 hover:text-gray-700"}`}
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                tab === t.key
+                  ? "border-teal-600 text-teal-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-2xl ${tab === entry.key ? "bg-teal-50 text-teal-600" : "bg-white text-gray-400"}`}>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d={entry.icon} />
-                  </svg>
-                </div>
-                <div>
-                  <p className={`text-sm font-semibold ${tab === entry.key ? "text-gray-900" : "text-gray-600"}`}>{entry.label}</p>
-                  <p className="text-xs text-gray-400">{entry.hint}</p>
-                </div>
-              </div>
+              {t.label}
+              {t.key === "drive" && driveFiles.length > 0 && pendingFilesCount > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center text-xs bg-amber-100 text-amber-700 rounded-full w-4 h-4 font-semibold">
+                  {pendingFilesCount}
+                </span>
+              )}
             </button>
           ))}
-        </div>
+        </nav>
       </div>
 
-      <div className="space-y-4">
-        <SectionHeader title={activeTab.label} description={activeTab.hint} />
+      {/* Tab content */}
+      <div className="bg-white border border-t-0 border-gray-200 rounded-b-lg">
 
+        {/* ── Users ── */}
         {tab === "users" && (
-          <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-              {users.map((user) => {
-                const form = roleForm[user.id] ?? { role: user.role, departmentId: user.departmentId ?? "" };
-                const initials = (user.name ?? user.email)
-                  .split(" ")
-                  .map((chunk) => chunk[0])
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase();
-
-                return (
-                  <article key={user.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-sm font-bold text-white">
-                        {initials}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-base font-bold text-gray-900">{user.name ?? "Unnamed user"}</h3>
-                        <p className="truncate text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <Field label="Role">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.map((u) => {
+                  const form = roleForm[u.id] ?? { role: u.role, departmentId: u.departmentId ?? "" };
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{u.name ?? "—"}</div>
+                        <div className="text-xs text-gray-500">{u.email}</div>
+                      </td>
+                      <td className="px-4 py-3">
                         <select
                           value={form.role}
                           onChange={(e) =>
                             setRoleForm((prev) => ({
                               ...prev,
-                              [user.id]: { ...form, role: e.target.value },
+                              [u.id]: { ...form, role: e.target.value },
                             }))
                           }
-                          className={inputClass}
+                          className={selCls}
                         >
                           <option value="professor">Professor</option>
                           <option value="chair">Chair</option>
                           <option value="dean">Dean</option>
                           <option value="admin">Admin</option>
                         </select>
-                      </Field>
-
-                      <Field label="Department">
+                      </td>
+                      <td className="px-4 py-3">
                         <select
                           value={form.departmentId}
                           onChange={(e) =>
                             setRoleForm((prev) => ({
                               ...prev,
-                              [user.id]: { ...form, departmentId: e.target.value },
+                              [u.id]: { ...form, departmentId: e.target.value },
                             }))
                           }
-                          className={inputClass}
+                          className={selCls}
                         >
                           <option value="">No department</option>
-                          {departments.map((department) => (
-                            <option key={department.id} value={department.id}>
-                              {department.name}
+                          {departments.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
                             </option>
                           ))}
                         </select>
-                      </Field>
-                    </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => updateUserRole(u.id)}
+                            disabled={loading}
+                            className={btnPrimary}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => del("user", u.id)}
+                            disabled={loading}
+                            className={btnDanger}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={() => updateUserRole(user.id)}
-                        disabled={loading}
-                        className={primaryButtonClass}
-                      >
-                        Save changes
+        {/* ── Departments ── */}
+        {tab === "departments" && (
+          <div className="p-4 space-y-4">
+            <form onSubmit={createDept} className="flex items-end gap-2 flex-wrap">
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Department name</label>
+                <input
+                  value={deptName}
+                  onChange={(e) => setDeptName(e.target.value)}
+                  placeholder="e.g. Computer Science"
+                  required
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">College</label>
+                <input
+                  value={deptCollege}
+                  onChange={(e) => setDeptCollege(e.target.value)}
+                  required
+                  className={inputCls}
+                />
+              </div>
+              <button type="submit" disabled={loading} className={btnPrimary}>
+                Add department
+              </button>
+            </form>
+
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                    <th className="px-4 py-2.5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {departments.map((d) => (
+                    <tr key={d.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{d.name}</td>
+                      <td className="px-4 py-3 text-gray-500">{d.college}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => del("department", d.id)} disabled={loading} className={btnDanger}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Semesters ── */}
+        {tab === "semesters" && (
+          <div className="p-4 space-y-4">
+            <form onSubmit={createSemester} className="flex items-end gap-2 flex-wrap">
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Label</label>
+                <input
+                  value={semName}
+                  onChange={(e) => setSemName(e.target.value)}
+                  placeholder="e.g. S.Y. 2025–2026 1st Sem"
+                  required
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Deadline (optional)</label>
+                <input
+                  type="datetime-local"
+                  value={semDeadline}
+                  onChange={(e) => setSemDeadline(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <button type="submit" disabled={loading} className={btnPrimary}>
+                Create semester
+              </button>
+            </form>
+
+            <div className="space-y-2">
+              {semesters.map((sem) => (
+                <div
+                  key={sem.id}
+                  className={`border rounded-lg p-4 ${sem.isActive ? "border-teal-200 bg-teal-50/30" : "border-gray-200 bg-white"}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{sem.label}</span>
+                        {sem.isActive && (
+                          <span className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-100 border border-teal-200 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      {sem.deadline && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Deadline: {new Date(sem.deadline).toLocaleDateString("en-PH", { dateStyle: "long" })}
+                        </p>
+                      )}
+                      {sem.driveFolderId && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Drive folder: {sem.driveFolderId.slice(0, 12)}…
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      {!sem.isActive && (
+                        <button onClick={() => activateSemester(sem.id)} disabled={loading} className={btnPrimary}>
+                          Activate
+                        </button>
+                      )}
+                      <button onClick={() => provisionDrive(sem.id)} disabled={loading} className={btnSecondary}>
+                        Provision Drive
                       </button>
-                      <button
-                        onClick={() => del("user", user.id)}
-                        disabled={loading}
-                        className={dangerButtonClass}
-                      >
+                      <button onClick={() => del("semester", sem.id)} disabled={loading} className={btnDanger}>
                         Delete
                       </button>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {tab === "departments" && (
-          <div className="space-y-4">
-            <form onSubmit={createDept} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-              <div className="grid gap-4 md:grid-cols-[1.4fr_1fr_auto] md:items-end">
-                <Field label="Department name">
-                  <input value={deptName} onChange={(e) => setDeptName(e.target.value)} required className={inputClass} placeholder="e.g. Computer Science" />
-                </Field>
-                <Field label="College">
-                  <input value={deptCollege} onChange={(e) => setDeptCollege(e.target.value)} className={inputClass} placeholder="e.g. University of Cabuyao" />
-                </Field>
-                <button type="submit" disabled={loading} className={primaryButtonClass}>
-                  Create department
-                </button>
-              </div>
-            </form>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {departments.map((department) => (
-                <article key={department.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">{department.name}</h3>
-                      <p className="mt-1 text-sm text-gray-500">{department.college}</p>
-                    </div>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Department</span>
                   </div>
-                  <button onClick={() => del("department", department.id)} disabled={loading} className={`mt-4 ${dangerButtonClass}`}>
-                    Delete department
-                  </button>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === "semesters" && (
-          <div className="space-y-4">
-            <form onSubmit={createSemester} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-              <div className="grid gap-4 md:grid-cols-[1.3fr_1fr_auto] md:items-end">
-                <Field label="Semester label">
-                  <input value={semName} onChange={(e) => setSemName(e.target.value)} required className={inputClass} placeholder="e.g. 1st Semester 2024-2025" />
-                </Field>
-                <Field label="Deadline (optional)">
-                  <input type="datetime-local" value={semDeadline} onChange={(e) => setSemDeadline(e.target.value)} className={inputClass} />
-                </Field>
-                <button type="submit" disabled={loading} className={primaryButtonClass}>
-                  Create semester
-                </button>
-              </div>
-            </form>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              {semesters.map((semester) => (
-                <article key={semester.id} className={`rounded-3xl border bg-white p-5 shadow-sm shadow-gray-100/60 ${semester.isActive ? "border-teal-300" : "border-gray-200"}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">{semester.label}</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {semester.deadline ? `Deadline: ${new Date(semester.deadline).toLocaleString()}` : "No deadline set"}
-                      </p>
-                    </div>
-                    {semester.isActive ? (
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span>
-                    ) : (
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Inactive</span>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    {!semester.isActive && (
-                      <button onClick={() => activateSemester(semester.id)} disabled={loading} className={primaryButtonClass}>
-                        Activate semester
-                      </button>
-                    )}
-                    <button onClick={() => provisionDrive(semester.id)} disabled={loading} className={secondaryAccentButtonClass}>
-                      Provision Drive folders
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === "requirements" && (
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-amber-900">First-time setup</h3>
-                  <p className="mt-1 text-sm text-amber-700">Run the migration once if the requirement tree table has not been created yet.</p>
                 </div>
-                <button onClick={runTreeMigration} className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700">
-                  Run migration
-                </button>
-              </div>
+              ))}
             </div>
-
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60 space-y-3">
-              <Field label="Select semester to edit">
-                <select value={treeSemId} onChange={(e) => setTreeSemId(e.target.value)} className={`${inputClass} max-w-md`}>
-                  <option value="">Choose a semester...</option>
-                  {semesters.map((semester) => (
-                    <option key={semester.id} value={semester.id}>
-                      {semester.label}{semester.isActive ? " (Active)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <p className="text-sm text-gray-500">After you pick a semester, the editor below will let you add folders and document nodes in the exact order professors will see.</p>
-            </div>
-
-            {treeSemId ? (
-              <RequirementTreeEditor semesterId={treeSemId} />
-            ) : (
-              <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
-                Pick a semester above to edit its requirement tree.
-              </div>
-            )}
           </div>
         )}
 
-        {tab === "drive" && (
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60 space-y-4">
-              <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
-                <Field label="Semester">
-                  <select
-                    value={driveFilterSemId}
-                    onChange={(e) => {
-                      setDriveFilterSemId(e.target.value);
-                      if (e.target.value) fetchDriveFiles(e.target.value);
-                      else setDriveFiles([]);
-                    }}
-                    className={inputClass}
-                  >
-                    <option value="">Choose a semester...</option>
-                    {semesters.map((semester) => (
-                      <option key={semester.id} value={semester.id}>
-                        {semester.label}{semester.isActive ? " (Active)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                {driveFilterSemId && (
-                  <button onClick={() => fetchDriveFiles(driveFilterSemId)} disabled={driveFilesLoading} className={secondaryButtonClass}>
-                    Refresh list
-                  </button>
-                )}
-                <MetricCard label="Pending files" value={`${pendingFilesCount}`} tone="blue" compact />
+        {/* ── Requirements ── */}
+        {tab === "requirements" && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <svg className="h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                First-time setup: run the tree migration to create the requirement nodes table.
               </div>
+              <button onClick={runTreeMigration} className={btnDark}>
+                Run migration
+              </button>
             </div>
 
-            {driveFilesLoading && (
-              <div className="rounded-3xl border border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-500">Loading files...</div>
-            )}
-
-            {!driveFilesLoading && driveFilterSemId && (
-              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                {driveFiles.map((file) => (
-                  <article key={file.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="text-base font-bold text-gray-900">{file.professorName ?? "Unnamed professor"}</h3>
-                        <p className="text-sm text-gray-500">{file.professorEmail}</p>
-                      </div>
-
-                      <div className="rounded-2xl bg-slate-50 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">File</p>
-                        <a
-                          href={`https://drive.google.com/file/d/${file.driveFileId}/view`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-1 block truncate text-sm font-medium text-blue-700 hover:text-blue-800"
-                        >
-                          {file.driveFileName ?? file.driveFileId}
-                        </a>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
-                          {file.status.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {file.submittedAt ? new Date(file.submittedAt).toLocaleString() : "No date"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex gap-2">
-                      <button onClick={() => handleDeleteDriveFile(file.id)} disabled={loading} className={dangerButtonClass}>
-                        Delete file
-                      </button>
-                    </div>
-                  </article>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-gray-700 shrink-0">Semester:</label>
+              <select
+                value={treeSemId}
+                onChange={(e) => setTreeSemId(e.target.value)}
+                className={selCls}
+              >
+                <option value="">Select a semester…</option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
                 ))}
+              </select>
+            </div>
 
-                {driveFiles.length === 0 && (
-                  <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500 lg:col-span-2 xl:col-span-3">
-                    No files uploaded for this semester.
-                  </div>
-                )}
+            {treeSemId && (
+              <RequirementTreeEditor semesterId={treeSemId} departments={departments} />
+            )}
+          </div>
+        )}
+
+        {/* ── Drive Files ── */}
+        {tab === "drive" && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <select
+                value={driveFilterSemId}
+                onChange={(e) => setDriveFilterSemId(e.target.value)}
+                className={selCls}
+              >
+                <option value="">Select a semester…</option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => driveFilterSemId && fetchDriveFiles(driveFilterSemId)}
+                disabled={!driveFilterSemId || driveFilesLoading}
+                className={btnSecondary}
+              >
+                {driveFilesLoading ? "Loading…" : "Load files"}
+              </button>
+            </div>
+
+            {driveFiles.length > 0 && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professor</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {driveFiles.map((f) => (
+                      <tr key={f.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900">{f.professorName ?? "—"}</div>
+                          <div className="text-xs text-gray-500">{f.professorEmail}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <a
+                            href={`https://drive.google.com/file/d/${f.driveFileId}/view`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-teal-600 hover:underline text-sm"
+                          >
+                            {f.driveFileName ?? f.driveFileId.slice(0, 12) + "…"}
+                          </a>
+                          {f.submittedAt && (
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {new Date(f.submittedAt).toLocaleDateString("en-PH")}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-gray-600 capitalize">{f.status.replace("_", " ")}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => handleDeleteDriveFile(f.id)}
+                            disabled={loading}
+                            className={btnDanger}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         )}
 
+        {/* ── Audit Logs ── */}
         {tab === "audit" && (
-          <div className="space-y-4">
-            {auditLogs.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
-                No audit logs yet.
-              </div>
-            ) : (
-              auditLogs.map((log) => (
-                <article key={log.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/60">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </span>
-                        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                          {log.action}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Target: <span className="font-semibold text-gray-800">{log.targetTable ?? "N/A"}</span>
-                        {log.targetId ? ` #${log.targetId.slice(0, 8)}` : ""}
-                      </p>
-                    </div>
-
-                    <pre className="max-w-full overflow-x-auto rounded-2xl bg-gray-50 px-4 py-3 text-xs text-gray-500 lg:min-w-[320px]">
-                      {log.metadata ? JSON.stringify(log.metadata, null, 2) : "No metadata"}
-                    </pre>
-                  </div>
-                </article>
-              ))
-            )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target ID</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metadata</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {auditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-gray-50 transition-colors align-top">
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">
+                      {new Date(log.createdAt).toLocaleString("en-PH", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{log.action}</td>
+                    <td className="px-4 py-3 text-gray-500">{log.targetTable ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <code className="text-xs text-gray-500 font-mono">
+                        {log.targetId ? log.targetId.slice(0, 8) + "…" : "—"}
+                      </code>
+                    </td>
+                    <td className="px-4 py-3 max-w-xs">
+                      {log.metadata ? (
+                        <pre className="text-xs text-gray-500 font-mono whitespace-pre-wrap break-all leading-relaxed">
+                          {JSON.stringify(log.metadata, null, 0)}
+                        </pre>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-function SectionHeader({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-      <p className="text-sm text-gray-500">{description}</p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5 text-sm font-medium text-gray-700">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  tone,
-  compact,
-}: {
-  label: string;
-  value: string;
-  tone: "slate" | "blue" | "emerald";
-  compact?: boolean;
-}) {
-  const className =
-    tone === "blue"
-      ? "bg-blue-50 text-blue-700"
-      : tone === "emerald"
-        ? "bg-emerald-50 text-emerald-700"
-        : "bg-slate-100 text-slate-700";
-
-  return (
-    <div className={`rounded-2xl px-4 ${compact ? "py-3" : "py-3.5"} ${className}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-const inputClass =
-  "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-200";
-const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50";
-const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50";
-const secondaryAccentButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
-const dangerButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50";
